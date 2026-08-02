@@ -94,23 +94,32 @@ export const AMENITY_STORAGE_KEY = "pg_admin_amenities";
 export const GALLERY_LABELS = ["Building Front", "Reception", "Room", "Washroom", "Dining Area", "Terrace"];
 
 const imageUrl = (photoId, width = 900) => `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=${width}&q=82`;
-const featuredImage = (query, signature, width = 900) =>
-  `https://source.unsplash.com/featured/${width}x650/?${encodeURIComponent(query)}&sig=${signature}`;
 
-const buildGallery = (signatureBase) =>
+// source.unsplash.com/featured was retired and returns 404 in production. Use
+// stable image URLs from the supported images.unsplash.com host instead.
+const GALLERY_PHOTO_IDS = [
+  "photo-1545324418-cc1a3fa10c00",
+  "photo-1600210492486-724fe5c67fb0",
+  "photo-1524758631624-e2822e304c36",
+  "photo-1584622650111-993a426fbf0a",
+  "photo-1556911220-bff31c812dba",
+  "photo-1505693416388-ac5ce068fe85"
+];
+
+const buildGallery = (photoOffset = 0) =>
   GALLERY_LABELS.map((label, index) => ({
     label,
-    image: featuredImage(`premium pg ${label.toLowerCase()} apartment`, signatureBase + index)
+    image: imageUrl(GALLERY_PHOTO_IDS[(index + photoOffset) % GALLERY_PHOTO_IDS.length])
   }));
 
 export const branchImageSets = {
   "anna-nagar": {
     image: imageUrl("photo-1545324418-cc1a3fa10c00"),
-    gallery: buildGallery(101)
+    gallery: buildGallery()
   },
   virugambakkam: {
     image: imageUrl("photo-1486406146926-c627a92ad1ab"),
-    gallery: buildGallery(201)
+    gallery: buildGallery(2)
   }
 };
 

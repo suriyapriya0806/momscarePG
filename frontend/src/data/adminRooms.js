@@ -23,8 +23,8 @@ const imageUrl = (photoId, width = 900) => `https://images.unsplash.com/${photoI
 const roomImages = (roomPhoto, signature) => [
   { label: "Building", image: imageUrl("photo-1545324418-cc1a3fa10c00") },
   { label: "Room", image: imageUrl(roomPhoto) },
-  { label: "Bathroom", image: `https://source.unsplash.com/featured/900x650/?premium%20bathroom&sig=${signature}` },
-  { label: "Balcony", image: `https://source.unsplash.com/featured/900x650/?apartment%20balcony&sig=${signature}` }
+  { label: "Bathroom", image: imageUrl("photo-1584622650111-993a426fbf0a") },
+  { label: "Balcony", image: imageUrl("photo-1505693416388-ac5ce068fe85") }
 ];
 
 export const defaultRooms = [

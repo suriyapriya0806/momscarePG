@@ -319,7 +319,13 @@ const BranchModal = ({ branch, branches, amenities, onAmenitiesChange, onClose, 
             <input className={fieldClass} value={form.pincode} onChange={(e) => update("pincode", e.target.value)} />
           </Field>
           <Field label="Contact Number" required error={errors.contactNumber}>
-            <input className={fieldClass} value={form.contactNumber} onChange={(e) => update("contactNumber", e.target.value)} />
+            <input
+              className={fieldClass}
+              value={form.contactNumber}
+              maxLength={10}
+              inputMode="numeric"
+              onChange={(e) => update("contactNumber", e.target.value.replace(/\D/g, ""))}
+            />
           </Field>
           <Field label="Email" error={errors.email}>
             <input className={fieldClass} value={form.email} onChange={(e) => update("email", e.target.value)} />

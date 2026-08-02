@@ -1,3 +1,5 @@
+import { isLaunchBranchId, registerLaunchBranchIds } from "./launchScope";
+
 export const RESIDENT_STORAGE_KEY = "pg_admin_residents";
 
 export const RESIDENT_STATUSES = ["Pending Check-In", "Active", "Vacating", "Checked Out"];
@@ -202,14 +204,19 @@ export const defaultResidents = [
     emergencyNotes: "No active stay.",
     status: "Checked Out"
   }
-];
+].filter((resident) => isLaunchBranchId(resident.branchId));
 
 export const loadResidents = () => {
   const stored = localStorage.getItem(RESIDENT_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : defaultResidents;
+  const source = stored ? JSON.parse(stored) : defaultResidents;
+  const scoped = source.filter((resident) => isLaunchBranchId(resident.branchId));
+  if (stored && scoped.length !== source.length) localStorage.setItem(RESIDENT_STORAGE_KEY, JSON.stringify(scoped));
+  return scoped;
 };
 
 export const saveResidents = (residents) => {
-  localStorage.setItem(RESIDENT_STORAGE_KEY, JSON.stringify(residents));
-  window.dispatchEvent(new CustomEvent("pg:residents-updated", { detail: { residents } }));
+  registerLaunchBranchIds(residents.map((resident) => resident && resident.branchId));
+  const scopedResidents = residents.filter((resident) => isLaunchBranchId(resident.branchId));
+  localStorage.setItem(RESIDENT_STORAGE_KEY, JSON.stringify(scopedResidents));
+  window.dispatchEvent(new CustomEvent("pg:residents-updated", { detail: { residents: scopedResidents } }));
 };

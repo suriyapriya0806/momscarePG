@@ -1,3 +1,6 @@
+import { isLaunchBranchId, registerLaunchBranchIds } from "./launchScope";
+import { loadBeds } from "./adminBeds";
+
 export const ROOM_STORAGE_KEY = "pg_admin_rooms";
 export const ROOM_AMENITY_STORAGE_KEY = "pg_admin_room_amenities";
 
@@ -31,18 +34,18 @@ export const defaultRooms = [
     branchName: "Anna Nagar",
     roomNumber: "101",
     floor: "1st Floor",
-    sharingType: "2 Sharing",
+    sharingType: "4 Sharing",
     roomType: "AC",
     monthlyRent: 16000,
     securityDeposit: 32000,
     size: "240",
-    description: "Premium twin sharing room with bright windows and private storage.",
+    description: "Premium four sharing room with bright windows and private storage.",
     status: "Available",
     amenities: ["Air Conditioner", "Attached Bathroom", "Study Table", "Wardrobe", "Fan", "Geyser", "Window", "Mirror"],
     images: roomImages("photo-1595526114035-0d45ed16cfbf", 101),
-    beds: 2,
-    availableBeds: 2,
-    occupiedBeds: 0
+    beds: 4,
+    availableBeds: 3,
+    occupiedBeds: 1
   },
   {
     id: "anna-102",
@@ -56,12 +59,12 @@ export const defaultRooms = [
     securityDeposit: 29000,
     size: "285",
     description: "Spacious three sharing room with study area and wardrobe access.",
-    status: "Occupied",
+    status: "Available",
     amenities: ["Attached Bathroom", "Study Table", "Wardrobe", "Fan", "Window", "Mirror"],
     images: roomImages("photo-1616594039964-ae9021a400a0", 102),
     beds: 3,
-    availableBeds: 0,
-    occupiedBeds: 3
+    availableBeds: 2,
+    occupiedBeds: 1
   },
   {
     id: "viru-101",
@@ -69,7 +72,7 @@ export const defaultRooms = [
     branchName: "Virugambakkam",
     roomNumber: "101",
     floor: "1st Floor",
-    sharingType: "2 Sharing",
+    sharingType: "4 Sharing",
     roomType: "AC",
     monthlyRent: 15500,
     securityDeposit: 31000,
@@ -78,9 +81,28 @@ export const defaultRooms = [
     status: "Available",
     amenities: ["Air Conditioner", "Attached Bathroom", "Study Table", "Wardrobe", "Fan", "Geyser"],
     images: roomImages("photo-1616486338812-3dadae4b4ace", 201),
-    beds: 2,
-    availableBeds: 1,
-    occupiedBeds: 1
+    beds: 4,
+    availableBeds: 3,
+    occupiedBeds: 0
+  },
+  {
+    id: "viru-102",
+    branchId: "virugambakkam",
+    branchName: "Virugambakkam",
+    roomNumber: "102",
+    floor: "1st Floor",
+    sharingType: "3 Sharing",
+    roomType: "Non AC",
+    monthlyRent: 13500,
+    securityDeposit: 19000,
+    size: "245",
+    description: "Three-sharing room with an independently bookable double cot.",
+    status: "Available",
+    amenities: ["Attached Bathroom", "Study Table", "Wardrobe", "Fan", "Window"],
+    images: roomImages("photo-1616486338812-3dadae4b4ace", 202),
+    beds: 3,
+    availableBeds: 2,
+    occupiedBeds: 0
   },
   {
     id: "tamb-201",
@@ -215,15 +237,33 @@ export const defaultRooms = [
     availableBeds: 1,
     occupiedBeds: 1
   }
-];
+].filter((room) => isLaunchBranchId(room.branchId));
+
+const sharingTypeByBerthCount = { 1: "1 Sharing", 2: "2 Sharing", 3: "3 Sharing", 4: "4 Sharing" };
+
+const syncRoomSharingTypes = (rooms, beds) =>
+  rooms.map((room) => {
+    const berthCount = beds.filter((bed) => bed.roomId === room.id).length || Number(room.beds || 0);
+    const sharingType = sharingTypeByBerthCount[berthCount];
+    if (!sharingType || (sharingType === room.sharingType && berthCount === Number(room.beds || 0))) return room;
+    return { ...room, sharingType, beds: berthCount };
+  });
 
 export const loadRooms = () => {
   const stored = localStorage.getItem(ROOM_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : defaultRooms;
+  const source = stored ? JSON.parse(stored) : defaultRooms;
+  const requiredDemoRooms = defaultRooms.filter((room) => room.id === "viru-102");
+  const sourceWithDoubleCotRoom = [...source, ...requiredDemoRooms.filter((room) => !source.some((item) => item.id === room.id))];
+  const scoped = sourceWithDoubleCotRoom.filter((room) => isLaunchBranchId(room.branchId));
+  const normalized = syncRoomSharingTypes(scoped, loadBeds());
+  if (stored && JSON.stringify(normalized) !== JSON.stringify(source)) localStorage.setItem(ROOM_STORAGE_KEY, JSON.stringify(normalized));
+  return normalized;
 };
 
 export const saveRooms = (rooms) => {
-  localStorage.setItem(ROOM_STORAGE_KEY, JSON.stringify(rooms));
+  registerLaunchBranchIds(rooms.map((room) => room && room.branchId));
+  const scopedRooms = rooms.filter((room) => isLaunchBranchId(room.branchId));
+  localStorage.setItem(ROOM_STORAGE_KEY, JSON.stringify(scopedRooms));
 };
 
 export const loadRoomAmenities = () => {

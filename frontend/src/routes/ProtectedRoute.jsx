@@ -6,7 +6,14 @@ const ProtectedRoute = ({ roles }) => {
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
 
-  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (!isAuthenticated) {
+    const loginPath = roles?.includes("ADMIN")
+      ? "/pgbooking/admin/login"
+      : roles?.includes("WARDEN")
+        ? "/pgbooking/warden/login"
+        : "/login";
+    return <Navigate to={loginPath} replace state={{ from: location }} />;
+  }
 
   if (roles?.length && !roles.includes(normalizeRole(user?.role))) {
     return <Navigate to={getCurrentUserDashboardPath(user)} replace />;

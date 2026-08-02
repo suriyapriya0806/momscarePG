@@ -13,10 +13,8 @@ export const featuredPgs = featuredPgBranches.map((branch) => ({
 }));
 
 export const popularBranches = [
-  { city: "Chennai", area: "Tambaram", properties: "20 Premium PGs", occupancy: "82%" },
-  { city: "Chennai", area: "Velachery", properties: "18 Premium PGs", occupancy: "78%" },
-  { city: "Chennai", area: "Guindy", properties: "22 Premium PGs", occupancy: "86%" },
-  { city: "Chennai", area: "Sholinganallur", properties: "25 Premium PGs", occupancy: "91%" }
+  { city: "Chennai", area: "Anna Nagar", properties: "1 Mom's Care PG House", occupancy: "80%" },
+  { city: "Chennai", area: "Virugambakkam", properties: "1 Mom's Care PG House", occupancy: "80%" }
 ];
 
 export const amenities = [

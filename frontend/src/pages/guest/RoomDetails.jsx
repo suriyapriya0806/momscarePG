@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import {
   BedDouble,
   Building2,
@@ -64,7 +64,8 @@ const RoomDetails = () => {
   const [roomType, setRoomType] = useState("");
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(0);
   const { rooms: liveRooms } = useLiveAvailability();
-  const branch = bookingBranches.find((item) => item.id === branchId) || bookingBranches[0];
+  const selectedBranch = bookingBranches.find((item) => item.id === branchId);
+  const branch = selectedBranch || bookingBranches[0];
   const liveBranchRooms = liveRooms.filter((room) => room.branchId === adminBranchIdFromPublicBranchId(branch.id));
   const branchOccupancy = liveBranchRooms.length
     ? {
@@ -102,6 +103,8 @@ const RoomDetails = () => {
       }),
     [branch.id, liveRooms, roomType, sharingType]
   );
+
+  if (!selectedBranch) return <Navigate to="/branches" replace />;
 
   return (
     <main className="bg-paper/70">

@@ -1,7 +1,9 @@
+import { isLaunchBranchId, registerLaunchBranchIds } from "./launchScope";
+
 export const BOOKING_STORAGE_KEY = "pg_admin_bookings";
 
-export const BOOKING_STATUSES = ["Pending", "Approved", "Rejected", "Cancelled", "Checked In"];
-export const BOOKING_ACTION_STATUSES = [...BOOKING_STATUSES, "Assigned to Warden"];
+export const BOOKING_STATUSES = ["Pending", "Approved", "Assigned to Warden", "Rejected", "Cancelled", "Checked In"];
+export const BOOKING_ACTION_STATUSES = BOOKING_STATUSES;
 export const PAYMENT_STATUSES = ["Pending", "Paid", "Refunded"];
 export const REJECTION_REASONS = ["Duplicate Booking", "Invalid Documents", "Payment Not Verified", "Other"];
 
@@ -19,7 +21,7 @@ export const defaultWardens = [
   { id: "warden-tnagar-1", name: "Janani S", branchId: "t-nagar", branchName: "T Nagar" },
   { id: "warden-shol-1", name: "Farhan Ali", branchId: "sholinganallur", branchName: "Sholinganallur" },
   { id: "warden-meda-1", name: "Revathi K", branchId: "medavakkam", branchName: "Medavakkam" }
-];
+].filter((warden) => isLaunchBranchId(warden.branchId));
 
 export const defaultBookings = [
   {
@@ -232,13 +234,18 @@ export const defaultBookings = [
     assignedWardenName: "",
     rejectionReason: ""
   }
-];
+].filter((booking) => isLaunchBranchId(booking.branchId));
 
 export const loadBookings = () => {
   const stored = localStorage.getItem(BOOKING_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : defaultBookings;
+  const source = stored ? JSON.parse(stored) : defaultBookings;
+  const scoped = source.filter((booking) => isLaunchBranchId(booking.branchId));
+  if (stored && scoped.length !== source.length) localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(scoped));
+  return scoped;
 };
 
 export const saveBookings = (bookings) => {
-  localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(bookings));
+  registerLaunchBranchIds(bookings.map((booking) => booking && booking.branchId));
+  const scopedBookings = bookings.filter((booking) => isLaunchBranchId(booking.branchId));
+  localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(scopedBookings));
 };

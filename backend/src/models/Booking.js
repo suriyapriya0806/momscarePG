@@ -16,10 +16,12 @@ const bookingSchema = new mongoose.Schema(
       default: "BLOCKED"
     },
     tokenAmount: { type: Number, required: true },
+    holdExpiresAt: { type: Date },
     notes: { type: String },
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     approvedAt: { type: Date },
-    rejectionReason: { type: String }
+    rejectionReason: { type: String },
+    cancellationReason: { type: String }
   },
   { timestamps: true }
 );

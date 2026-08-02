@@ -38,8 +38,8 @@ export const AuthProvider = ({ children }) => {
     setUser(normalized.user);
   };
 
-  const login = async (loginId, password) => {
-    const payload = await authenticate({ loginId, password });
+  const login = async (loginId, password, portal) => {
+    const payload = await authenticate({ loginId, password, portal });
     persist(payload);
     return payload.user;
   };

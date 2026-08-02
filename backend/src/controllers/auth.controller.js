@@ -30,7 +30,7 @@ const sendAuth = (res, user) => {
 
 const login = catchAsync(async (req, res) => {
   const loginId = String(req.body.loginId || req.body.email || "").trim();
-  const { password } = req.body;
+  const { password, portal } = req.body;
 
   console.log("[auth] Login ID received:", loginId);
 
@@ -60,6 +60,12 @@ const login = catchAsync(async (req, res) => {
   if (!user || !["SUPER_ADMIN", "WARDEN"].includes(user.role)) {
     throw new ApiError(401, "Invalid email or password.");
   }
+  if (portal === "admin" && user.role !== "SUPER_ADMIN") {
+    throw new ApiError(403, "This account is not permitted to use the admin portal.");
+  }
+  if (portal === "warden" && user.role !== "WARDEN") {
+    throw new ApiError(403, "This account is not permitted to use the warden portal.");
+  }
 
   if (isWardenLogin && user.role !== "WARDEN") {
     throw new ApiError(403, "Invalid warden role.");
@@ -70,7 +76,7 @@ const login = catchAsync(async (req, res) => {
     throw new ApiError(403, isWardenLogin ? "Account is inactive." : "Invalid email or password.");
   }
 
-  if (isEmailLogin && user.role === "WARDEN") {
+  if (isEmailLogin && user.role === "WARDEN" && portal !== "warden") {
     throw new ApiError(401, "Invalid email or password.");
   }
 

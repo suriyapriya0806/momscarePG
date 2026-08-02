@@ -62,7 +62,7 @@ const socialAccounts = {
   }
 };
 
-export const authenticate = async ({ loginId, password }) => {
+export const authenticate = async ({ loginId, password, portal }) => {
   const value = String(loginId || "").trim();
   if (!value) throw new Error("Login ID / Email is required.");
   if (!password) throw new Error("Password is required.");
@@ -75,6 +75,10 @@ export const authenticate = async ({ loginId, password }) => {
     if (normalizeLoginId(value) === "warden@pgstay.com") throw new Error("Invalid Warden email or password.");
     if (normalizeLoginId(value) === "admin@pgstay.com") throw new Error("Invalid Admin email or password.");
     throw new Error("Invalid staff email or password.");
+  }
+  const expectedRole = portal === "admin" ? "Admin" : portal === "warden" ? "Warden" : "";
+  if (expectedRole && account.user.role !== expectedRole) {
+    throw new Error("This account is not permitted to use the selected portal.");
   }
 
   return {

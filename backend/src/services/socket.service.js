@@ -44,4 +44,9 @@ const emitBookingBlocked = (booking) => {
   });
 };
 
-module.exports = { attachSocket, emitBedAvailability, emitPaymentUpdate, emitBookingBlocked };
+const emitNotification = (notification) => {
+  if (!io || !notification) return;
+  io.emit("notification:created", notification);
+};
+
+module.exports = { attachSocket, emitBedAvailability, emitPaymentUpdate, emitBookingBlocked, emitNotification };

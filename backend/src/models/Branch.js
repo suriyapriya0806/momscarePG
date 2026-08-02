@@ -8,6 +8,8 @@ const branchSchema = new mongoose.Schema(
     city: { type: String, required: true },
     state: { type: String, required: true },
     pincode: { type: String, trim: true },
+    // Branch-level so future locations can be girls-only, boys-only, or unisex.
+    gender: { type: String, enum: ["Girls", "Boys", "Unisex"], default: "Girls" },
     contactNumber: { type: String, trim: true },
     email: { type: String, lowercase: true, trim: true },
     mapLink: { type: String, trim: true },

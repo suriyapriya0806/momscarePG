@@ -5,7 +5,7 @@ import BranchImage from "../../components/admin/BranchImage";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import StatCard from "../../components/ui/StatCard";
-import { AREAS, loadAmenities, loadBranches, saveAmenities, saveBranches } from "../../data/adminBranches";
+import { AREAS, CHENNAI_AREAS, loadAmenities, loadBranches, saveAmenities, saveBranches } from "../../data/adminBranches";
 
 const rowsPerPage = 10;
 
@@ -25,7 +25,7 @@ const emptyBranch = {
   image: "",
   gallery: [],
   description: "",
-  gender: "Unisex",
+  gender: "Girls",
   status: "Active",
   amenities: [],
   rooms: 0,
@@ -306,7 +306,7 @@ const BranchModal = ({ branch, branches, amenities, onAmenitiesChange, onClose, 
           <Field label="Area" required error={errors.area}>
             <select className={fieldClass} value={form.area} onChange={(e) => update("area", e.target.value)}>
               <option value="">Select area</option>
-              {AREAS.map((area) => <option key={area} value={area}>{area}</option>)}
+              {[...new Set([...CHENNAI_AREAS, ...AREAS])].map((area) => <option key={area} value={area}>{area}</option>)}
             </select>
           </Field>
           <Field label="City" required error={errors.city}>

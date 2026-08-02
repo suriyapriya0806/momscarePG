@@ -49,7 +49,8 @@ export const exploreBranches = [
   }
 ];
 
-export const featuredPgBranches = [
+export const featuredPgBranches = exploreBranches;
+/*
   {
     id: "tambaram-pg",
     name: "Tambaram PG",
@@ -191,8 +192,9 @@ export const featuredPgBranches = [
     occupancy: { totalRooms: 135, bookedRooms: 104, availableRooms: 31 }
   }
 ];
+*/
 
-export const bookingBranches = [...exploreBranches, ...featuredPgBranches];
+export const bookingBranches = [...exploreBranches];
 
 const createBranchRooms = (branchId, prefix, baseRent) => [
   {
@@ -220,8 +222,10 @@ const createBranchRooms = (branchId, prefix, baseRent) => [
     securityDeposit: 25000,
     bookingAmount: 3000,
     bedList: [
-      { id: `${prefix}-102-a`, label: "Bed A", status: "Available" },
-      { id: `${prefix}-102-b`, label: "Bed B", status: "Booked" }
+      cotBed("C1", [
+        { id: `${prefix}-102-c1-upper`, position: "upper", status: "Available" },
+        { id: `${prefix}-102-c1-lower`, position: "lower", status: "Booked" }
+      ])
     ]
   },
   {
@@ -236,9 +240,11 @@ const createBranchRooms = (branchId, prefix, baseRent) => [
     securityDeposit: 20000,
     bookingAmount: 2500,
     bedList: [
-      { id: `${prefix}-203-a`, label: "Bed A", status: "Available" },
-      { id: `${prefix}-203-b`, label: "Bed B", status: "Available" },
-      { id: `${prefix}-203-c`, label: "Bed C", status: "Booked" }
+      singleBed(`${prefix}-203-a`, "Bed A", "Available"),
+      cotBed("C1", [
+        { id: `${prefix}-203-c1-upper`, position: "upper", status: "Available" },
+        { id: `${prefix}-203-c1-lower`, position: "lower", status: "Booked" }
+      ])
     ]
   },
   {
@@ -253,29 +259,72 @@ const createBranchRooms = (branchId, prefix, baseRent) => [
     securityDeposit: 18000,
     bookingAmount: 2000,
     bedList: [
-      { id: `${prefix}-304-a`, label: "Bed A", status: "Booked" },
-      { id: `${prefix}-304-b`, label: "Bed B", status: "Available" },
-      { id: `${prefix}-304-c`, label: "Bed C", status: "Available" },
-      { id: `${prefix}-304-d`, label: "Bed D", status: "Booked" }
+      cotBed("C1", [
+        { id: `${prefix}-304-c1-upper`, position: "upper", status: "Booked" },
+        { id: `${prefix}-304-c1-lower`, position: "lower", status: "Available" }
+      ]),
+      cotBed("C2", [
+        { id: `${prefix}-304-c2-upper`, position: "upper", status: "Available" },
+        { id: `${prefix}-304-c2-lower`, position: "lower", status: "Booked" }
+      ])
     ]
   }
 ];
+
+const singleBed = (id, label, status) => ({ type: "single", id, label, status });
+
+const cotBed = (cotCode, berths) => ({
+  type: "cot",
+  cotCode,
+  label: `Cot ${cotCode}`,
+  berths: berths.map(({ id, position, status }) => ({
+    id,
+    label: `Cot ${cotCode} · ${position === "upper" ? "Upper" : "Lower"}`,
+    berth_type: position,
+    status
+  }))
+});
+
+export const findRoomBed = (bedList, bedId) => {
+  for (const item of bedList || []) {
+    if (item.type === "cot") {
+      const berth = item.berths.find((b) => b.id === bedId);
+      if (berth) {
+        return {
+          ...berth,
+          cotCode: item.cotCode,
+          berthPosition: berth.berth_type === "upper" ? "UPPER" : "LOWER",
+          bedType: "DOUBLE_COT"
+        };
+      }
+    } else if (item.id === bedId) {
+      return { ...item };
+    }
+  }
+  return null;
+};
 
 export const bookingRooms = [
   {
     id: "anna-101",
     branchId: "anna-nagar-pg",
     number: "101",
-    sharingType: "2 Sharing",
+    sharingType: "4 Sharing",
     roomType: "AC",
-    beds: 2,
+    beds: 4,
     status: "Available",
     monthlyRent: 18500,
     securityDeposit: 25000,
     bookingAmount: 3000,
     bedList: [
-      { id: "anna-101-a", label: "Bed A", status: "Available" },
-      { id: "anna-101-b", label: "Bed B", status: "Booked" }
+      cotBed("C1", [
+        { id: "anna-101-c1-upper", position: "upper", status: "Available" },
+        { id: "anna-101-c1-lower", position: "lower", status: "Available" }
+      ]),
+      cotBed("C2", [
+        { id: "anna-101-c2-upper", position: "upper", status: "Booked" },
+        { id: "anna-101-c2-lower", position: "lower", status: "Available" }
+      ])
     ]
   },
   {
@@ -290,9 +339,11 @@ export const bookingRooms = [
     securityDeposit: 20000,
     bookingAmount: 2500,
     bedList: [
-      { id: "anna-102-a", label: "Bed A", status: "Available" },
-      { id: "anna-102-b", label: "Bed B", status: "Available" },
-      { id: "anna-102-c", label: "Bed C", status: "Booked" }
+      singleBed("anna-102-a", "Bed A", "Available"),
+      cotBed("C1", [
+        { id: "anna-102-c1-upper", position: "upper", status: "Booked" },
+        { id: "anna-102-c1-lower", position: "lower", status: "Available" }
+      ])
     ]
   },
   {
@@ -306,7 +357,7 @@ export const bookingRooms = [
     monthlyRent: 24500,
     securityDeposit: 35000,
     bookingAmount: 5000,
-    bedList: [{ id: "anna-201-a", label: "Bed A", status: "Available" }]
+    bedList: [singleBed("anna-201-a", "Bed A", "Available")]
   },
   {
     id: "anna-204",
@@ -320,26 +371,36 @@ export const bookingRooms = [
     securityDeposit: 18000,
     bookingAmount: 2000,
     bedList: [
-      { id: "anna-204-a", label: "Bed A", status: "Booked" },
-      { id: "anna-204-b", label: "Bed B", status: "Available" },
-      { id: "anna-204-c", label: "Bed C", status: "Available" },
-      { id: "anna-204-d", label: "Bed D", status: "Booked" }
+      cotBed("C1", [
+        { id: "anna-204-c1-upper", position: "upper", status: "Available" },
+        { id: "anna-204-c1-lower", position: "lower", status: "Booked" }
+      ]),
+      cotBed("C2", [
+        { id: "anna-204-c2-upper", position: "upper", status: "Available" },
+        { id: "anna-204-c2-lower", position: "lower", status: "Booked" }
+      ])
     ]
   },
   {
     id: "viru-101",
     branchId: "virugambakkam-pg",
     number: "101",
-    sharingType: "2 Sharing",
+    sharingType: "4 Sharing",
     roomType: "AC",
-    beds: 2,
+    beds: 4,
     status: "Available",
     monthlyRent: 17500,
     securityDeposit: 24000,
     bookingAmount: 3000,
     bedList: [
-      { id: "viru-101-a", label: "Bed A", status: "Available" },
-      { id: "viru-101-b", label: "Bed B", status: "Booked" }
+      cotBed("C1", [
+        { id: "viru-101-c1-upper", position: "upper", status: "Available" },
+        { id: "viru-101-c1-lower", position: "lower", status: "Available" }
+      ]),
+      cotBed("C2", [
+        { id: "viru-101-c2-upper", position: "upper", status: "Booked" },
+        { id: "viru-101-c2-lower", position: "lower", status: "Available" }
+      ])
     ]
   },
   {
@@ -354,9 +415,11 @@ export const bookingRooms = [
     securityDeposit: 19000,
     bookingAmount: 2500,
     bedList: [
-      { id: "viru-102-a", label: "Bed A", status: "Available" },
-      { id: "viru-102-b", label: "Bed B", status: "Available" },
-      { id: "viru-102-c", label: "Bed C", status: "Booked" }
+      singleBed("viru-102-a", "Bed A", "Available"),
+      cotBed("C1", [
+        { id: "viru-102-c1-upper", position: "upper", status: "Booked" },
+        { id: "viru-102-c1-lower", position: "lower", status: "Available" }
+      ])
     ]
   },
   {
@@ -370,7 +433,7 @@ export const bookingRooms = [
     monthlyRent: 19500,
     securityDeposit: 28000,
     bookingAmount: 4000,
-    bedList: [{ id: "viru-301-a", label: "Bed A", status: "Available" }]
+    bedList: [singleBed("viru-301-a", "Bed A", "Available")]
   },
   {
     id: "viru-304",
@@ -384,19 +447,16 @@ export const bookingRooms = [
     securityDeposit: 21000,
     bookingAmount: 2500,
     bedList: [
-      { id: "viru-304-a", label: "Bed A", status: "Booked" },
-      { id: "viru-304-b", label: "Bed B", status: "Available" },
-      { id: "viru-304-c", label: "Bed C", status: "Available" },
-      { id: "viru-304-d", label: "Bed D", status: "Booked" }
+      cotBed("C1", [
+        { id: "viru-304-c1-upper", position: "upper", status: "Available" },
+        { id: "viru-304-c1-lower", position: "lower", status: "Booked" }
+      ]),
+      cotBed("C2", [
+        { id: "viru-304-c2-upper", position: "upper", status: "Available" },
+        { id: "viru-304-c2-lower", position: "lower", status: "Booked" }
+      ])
     ]
   },
-  ...createBranchRooms("tambaram-pg", "tambaram", 13500),
-  ...createBranchRooms("velachery-pg", "velachery", 14000),
-  ...createBranchRooms("porur-pg", "porur", 12500),
-  ...createBranchRooms("t-nagar-pg", "tnagar", 15500),
-  ...createBranchRooms("sholinganallur-pg", "sholinganallur", 13800),
-  ...createBranchRooms("guindy-pg", "guindy", 14200),
-  ...createBranchRooms("medavakkam-pg", "medavakkam", 12800)
 ];
 
 export const formatCurrency = (amount) => `₹${amount.toLocaleString("en-IN")}`;

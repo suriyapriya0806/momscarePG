@@ -5,6 +5,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import { getDashboardPathForRole, ROLES } from "./routes/roleRoutes";
 import ComplaintsPage from "./pages/complaints/ComplaintsPage";
 import Login from "./pages/Login";
+import StaffLogin from "./pages/StaffLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import BedsPage from "./pages/admin/BedsPage";
 import BranchDetailsPage from "./pages/admin/BranchDetailsPage";
@@ -36,6 +37,8 @@ const App = () => (
     <Route element={<PublicLayout />}>
       <Route index element={<Home />} />
       <Route path="login" element={<Login />} />
+      <Route path="pgbooking/admin/login" element={<StaffLogin portal="admin" />} />
+      <Route path="pgbooking/warden/login" element={<StaffLogin portal="warden" />} />
       <Route path="branches" element={<BranchListing />} />
       <Route path="featured-branches" element={<FeaturedBranches />} />
       <Route path="branches/:branchId/rooms" element={<RoomDetails />} />

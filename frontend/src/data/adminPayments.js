@@ -1,3 +1,5 @@
+import { isLaunchBranchId, registerLaunchBranchIds } from "./launchScope";
+
 export const PAYMENT_STORAGE_KEY = "pg_admin_payments";
 
 export const PAYMENT_TYPES = ["Booking Token", "Security Deposit", "Monthly Rent", "Electricity Charges", "Other Charges", "Refund", "Fine"];
@@ -245,12 +247,17 @@ export const defaultPayments = [
 
 export const loadPayments = () => {
   const stored = localStorage.getItem(PAYMENT_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : defaultPayments;
+  const source = stored ? JSON.parse(stored) : defaultPayments;
+  const scoped = source.filter((payment) => isLaunchBranchId(payment.branchId));
+  if (stored && scoped.length !== source.length) localStorage.setItem(PAYMENT_STORAGE_KEY, JSON.stringify(scoped));
+  return scoped;
 };
 
 export const savePayments = (payments) => {
-  localStorage.setItem(PAYMENT_STORAGE_KEY, JSON.stringify(payments));
-  window.dispatchEvent(new CustomEvent("pg:payments-updated", { detail: { payments } }));
+  registerLaunchBranchIds(payments.map((payment) => payment && payment.branchId));
+  const scoped = payments.filter((payment) => isLaunchBranchId(payment.branchId));
+  localStorage.setItem(PAYMENT_STORAGE_KEY, JSON.stringify(scoped));
+  window.dispatchEvent(new CustomEvent("pg:payments-updated", { detail: { payments: scoped } }));
 };
 
 export const createPaymentReceiptNo = (payments) => {

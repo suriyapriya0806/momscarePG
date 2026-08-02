@@ -25,6 +25,35 @@ import Card from "../../components/ui/Card";
 const fieldClass = "min-h-12 w-full rounded-xl border border-line bg-white px-4 text-sm text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/25 disabled:bg-paper disabled:text-slate-500";
 const textareaClass = `${fieldClass} min-h-28 py-3`;
 
+const SETTINGS_STORAGE_KEY = "pg_admin_settings";
+
+const mergeSettings = (stored) => {
+  if (!stored || typeof stored !== "object") return defaultSettings;
+  const merged = {};
+  Object.keys(defaultSettings).forEach((section) => {
+    merged[section] = { ...defaultSettings[section], ...(stored[section] && typeof stored[section] === "object" ? stored[section] : {}) };
+  });
+  return merged;
+};
+
+const loadSettings = () => {
+  try {
+    return mergeSettings(JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY)));
+  } catch (error) {
+    return defaultSettings;
+  }
+};
+
+const sanitizeForStorage = (settings) => {
+  const clean = JSON.parse(JSON.stringify(settings));
+  ["security", "profile"].forEach((section) => {
+    ["currentPassword", "newPassword", "confirmPassword"].forEach((field) => {
+      if (clean[section]) clean[section][field] = "";
+    });
+  });
+  return clean;
+};
+
 const menuItems = [
   { id: "general", label: "General", icon: Settings },
   { id: "company", label: "Company", icon: Building2 },
@@ -222,7 +251,7 @@ const SaveBar = ({ onSave, saved }) => (
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("general");
-  const [settings, setSettings] = useState(defaultSettings);
+  const [settings, setSettings] = useState(loadSettings);
   const [errors, setErrors] = useState({});
   const [savedSection, setSavedSection] = useState("");
 
@@ -238,6 +267,7 @@ const SettingsPage = () => {
     const nextErrors = validateSection(section, settings[section]);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(sanitizeForStorage(settings)));
     setSavedSection(section);
   };
 

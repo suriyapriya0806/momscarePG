@@ -13,7 +13,8 @@ const loginRules = [
     .trim()
     .notEmpty()
     .withMessage("Login ID / Email is required."),
-  body("password").isLength({ min: 8 }).withMessage("Password must be at least 8 characters.")
+  body("password").isLength({ min: 8 }).withMessage("Password must be at least 8 characters."),
+  body("portal").optional().isIn(["admin", "warden"]).withMessage("portal must be admin or warden.")
 ];
 
 const socialRules = [

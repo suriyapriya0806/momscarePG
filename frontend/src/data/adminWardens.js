@@ -1,3 +1,5 @@
+import { isLaunchBranchId, registerLaunchBranchIds } from "./launchScope";
+
 export const WARDEN_STORAGE_KEY = "pg_admin_wardens";
 
 export const WARDEN_STATUSES = ["Active", "Inactive", "On Leave"];
@@ -173,9 +175,13 @@ export const defaultWardens = [
 
 export const loadWardens = () => {
   const stored = localStorage.getItem(WARDEN_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : defaultWardens;
+  const source = stored ? JSON.parse(stored) : defaultWardens;
+  const scoped = source.filter((warden) => isLaunchBranchId(warden.branchId));
+  if (stored && scoped.length !== source.length) localStorage.setItem(WARDEN_STORAGE_KEY, JSON.stringify(scoped));
+  return scoped;
 };
 
 export const saveWardens = (wardens) => {
-  localStorage.setItem(WARDEN_STORAGE_KEY, JSON.stringify(wardens));
+  registerLaunchBranchIds(wardens.map((warden) => warden && warden.branchId));
+  localStorage.setItem(WARDEN_STORAGE_KEY, JSON.stringify(wardens.filter((warden) => isLaunchBranchId(warden.branchId))));
 };

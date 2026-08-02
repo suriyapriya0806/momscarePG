@@ -1,46 +1,34 @@
+import { isLaunchBranchId, registerLaunchBranchIds } from "./launchScope";
+
 export const BED_STORAGE_KEY = "pg_admin_beds";
 
 export const BED_STATUSES = ["Available", "Occupied", "Reserved", "Maintenance"];
-export const BED_TYPES = ["Single Cot"];
+export const BED_TYPES = ["Single Cot", "Double Cot (Bunk)"];
 
 export const luxuryBedImage = "https://images.unsplash.com/photo-1615873968403-89e068629265?auto=format&fit=crop&w=900&q=82";
 
 export const defaultBeds = [
   {
-    id: "anna-101-bed-a",
-    branchId: "anna-nagar",
-    branchName: "Anna Nagar",
-    roomId: "anna-101",
-    roomNumber: "101",
-    sharingType: "2 Sharing",
-    bedName: "Bed A",
-    bedCode: "BED101A",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Available",
-    currentResident: "",
-    bookingId: "",
-    checkInDate: "",
-    checkOutDate: "",
-    description: "Premium single cot with under-bed storage and fresh linen."
+    id: "anna-101-c2-upper", branchId: "anna-nagar", branchName: "Anna Nagar", roomId: "anna-101", roomNumber: "101", sharingType: "4 Sharing",
+    bedName: "Cot C2 · Upper", bedCode: "BED101C2-U", bedType: "Double Cot (Bunk)", cotCode: "C2", berthPosition: "UPPER", bedImage: luxuryBedImage,
+    status: "Occupied", currentResident: "Rahul Kumar", bookingId: "BK-AN-101B", checkInDate: "2026-06-01", checkOutDate: "2027-05-31",
+    description: "Upper berth of double cot C2 assigned to an active resident."
   },
   {
-    id: "anna-101-bed-b",
-    branchId: "anna-nagar",
-    branchName: "Anna Nagar",
-    roomId: "anna-101",
-    roomNumber: "101",
-    sharingType: "2 Sharing",
-    bedName: "Bed B",
-    bedCode: "BED101B",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Occupied",
-    currentResident: "Rahul Kumar",
-    bookingId: "BK-AN-101B",
-    checkInDate: "2026-06-01",
-    checkOutDate: "2027-05-31",
-    description: "Window-side cot assigned to an active resident."
+    id: "anna-101-c2-lower", branchId: "anna-nagar", branchName: "Anna Nagar", roomId: "anna-101", roomNumber: "101", sharingType: "4 Sharing",
+    bedName: "Cot C2 · Lower", bedCode: "BED101C2-L", bedType: "Double Cot (Bunk)", cotCode: "C2", berthPosition: "LOWER", bedImage: luxuryBedImage,
+    status: "Available", currentResident: "", bookingId: "", checkInDate: "", checkOutDate: "",
+    description: "Lower berth of double cot C2."
+  },
+  {
+    id: "anna-101-c1-upper", branchId: "anna-nagar", branchName: "Anna Nagar", roomId: "anna-101", roomNumber: "101", sharingType: "4 Sharing",
+    bedName: "Cot C1 · Upper", bedCode: "BED101C1-U", bedType: "Double Cot (Bunk)", cotCode: "C1", berthPosition: "UPPER", bedImage: luxuryBedImage,
+    status: "Available", currentResident: "", bookingId: "", checkInDate: "", checkOutDate: "", description: "Upper berth of double cot C1."
+  },
+  {
+    id: "anna-101-c1-lower", branchId: "anna-nagar", branchName: "Anna Nagar", roomId: "anna-101", roomNumber: "101", sharingType: "4 Sharing",
+    bedName: "Cot C1 · Lower", bedCode: "BED101C1-L", bedType: "Double Cot (Bunk)", cotCode: "C1", berthPosition: "LOWER", bedImage: luxuryBedImage,
+    status: "Available", currentResident: "", bookingId: "", checkInDate: "", checkOutDate: "", description: "Lower berth of double cot C1."
   },
   {
     id: "anna-102-bed-a",
@@ -61,50 +49,78 @@ export const defaultBeds = [
     description: "Front cot in a spacious three sharing room."
   },
   {
-    id: "anna-102-bed-b",
-    branchId: "anna-nagar",
-    branchName: "Anna Nagar",
-    roomId: "anna-102",
-    roomNumber: "102",
-    sharingType: "3 Sharing",
-    bedName: "Bed B",
-    bedCode: "BED102B",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Occupied",
-    currentResident: "Naveen Raj",
-    bookingId: "BK-AN-102B",
-    checkInDate: "2026-05-12",
-    checkOutDate: "2027-05-11",
-    description: "Middle cot with wardrobe allocation."
+    id: "anna-102-c1-upper", branchId: "anna-nagar", branchName: "Anna Nagar", roomId: "anna-102", roomNumber: "102", sharingType: "3 Sharing",
+    bedName: "Cot C1 · Upper", bedCode: "BED102C1-U", bedType: "Double Cot (Bunk)", cotCode: "C1", berthPosition: "UPPER", bedImage: luxuryBedImage,
+    status: "Occupied", currentResident: "Naveen Raj", bookingId: "BK-AN-102B", checkInDate: "2026-05-12", checkOutDate: "2027-05-11",
+    description: "Upper berth of double cot C1 assigned to an active resident."
   },
   {
-    id: "anna-102-bed-c",
-    branchId: "anna-nagar",
-    branchName: "Anna Nagar",
-    roomId: "anna-102",
-    roomNumber: "102",
-    sharingType: "3 Sharing",
-    bedName: "Bed C",
-    bedCode: "BED102C",
-    bedType: "Single Cot",
+    id: "anna-102-c1-lower", branchId: "anna-nagar", branchName: "Anna Nagar", roomId: "anna-102", roomNumber: "102", sharingType: "3 Sharing",
+    bedName: "Cot C1 · Lower", bedCode: "BED102C1-L", bedType: "Double Cot (Bunk)", cotCode: "C1", berthPosition: "LOWER", bedImage: luxuryBedImage,
+    status: "Available", currentResident: "", bookingId: "", checkInDate: "", checkOutDate: "",
+    description: "Lower berth of double cot C1."
+  },
+  {
+    id: "viru-101-c2-upper", branchId: "virugambakkam", branchName: "Virugambakkam", roomId: "viru-101", roomNumber: "101", sharingType: "4 Sharing",
+    bedName: "Cot C2 · Upper", bedCode: "BEDV101C2-U", bedType: "Double Cot (Bunk)", cotCode: "C2", berthPosition: "UPPER", bedImage: luxuryBedImage,
+    status: "Reserved", currentResident: "", bookingId: "BK-VR-101B", checkInDate: "2026-08-01", checkOutDate: "2027-07-31",
+    description: "Upper berth of double cot C2 reserved for upcoming move-in."
+  },
+  {
+    id: "viru-101-c2-lower", branchId: "virugambakkam", branchName: "Virugambakkam", roomId: "viru-101", roomNumber: "101", sharingType: "4 Sharing",
+    bedName: "Cot C2 · Lower", bedCode: "BEDV101C2-L", bedType: "Double Cot (Bunk)", cotCode: "C2", berthPosition: "LOWER", bedImage: luxuryBedImage,
+    status: "Available", currentResident: "", bookingId: "", checkInDate: "", checkOutDate: "",
+    description: "Lower berth of double cot C2."
+  },
+  {
+    id: "viru-101-c1-upper",
+    branchId: "virugambakkam",
+    branchName: "Virugambakkam",
+    roomId: "viru-101",
+    roomNumber: "101",
+    sharingType: "4 Sharing",
+    bedName: "Cot C1 · Upper",
+    bedCode: "BEDV101C1-U",
+    bedType: "Double Cot (Bunk)",
+    cotCode: "C1",
+    berthPosition: "UPPER",
     bedImage: luxuryBedImage,
     status: "Available",
     currentResident: "",
     bookingId: "",
     checkInDate: "",
     checkOutDate: "",
-    description: "Rear cot with attached study table access."
+    description: "Upper berth of double cot C1."
   },
   {
-    id: "viru-101-bed-a",
+    id: "viru-101-c1-lower",
     branchId: "virugambakkam",
     branchName: "Virugambakkam",
     roomId: "viru-101",
     roomNumber: "101",
-    sharingType: "2 Sharing",
+    sharingType: "4 Sharing",
+    bedName: "Cot C1 · Lower",
+    bedCode: "BEDV101C1-L",
+    bedType: "Double Cot (Bunk)",
+    cotCode: "C1",
+    berthPosition: "LOWER",
+    bedImage: luxuryBedImage,
+    status: "Available",
+    currentResident: "",
+    bookingId: "",
+    checkInDate: "",
+    checkOutDate: "",
+    description: "Lower berth of double cot C1."
+  },
+  {
+    id: "viru-102-bed-a",
+    branchId: "virugambakkam",
+    branchName: "Virugambakkam",
+    roomId: "viru-102",
+    roomNumber: "102",
+    sharingType: "3 Sharing",
     bedName: "Bed A",
-    bedCode: "BEDV101A",
+    bedCode: "BEDV102A",
     bedType: "Single Cot",
     bedImage: luxuryBedImage,
     status: "Available",
@@ -112,214 +128,80 @@ export const defaultBeds = [
     bookingId: "",
     checkInDate: "",
     checkOutDate: "",
-    description: "Bright cot near the study wall."
+    description: "Single cot in Room 102."
   },
   {
-    id: "viru-101-bed-b",
+    id: "viru-102-c1-upper",
     branchId: "virugambakkam",
     branchName: "Virugambakkam",
-    roomId: "viru-101",
-    roomNumber: "101",
-    sharingType: "2 Sharing",
-    bedName: "Bed B",
-    bedCode: "BEDV101B",
-    bedType: "Single Cot",
+    roomId: "viru-102",
+    roomNumber: "102",
+    sharingType: "3 Sharing",
+    bedName: "Cot C1 · Upper",
+    bedCode: "BEDV102C1-U",
+    bedType: "Double Cot (Bunk)",
+    cotCode: "C1",
+    berthPosition: "UPPER",
     bedImage: luxuryBedImage,
     status: "Reserved",
     currentResident: "",
-    bookingId: "BK-VR-101B",
+    bookingId: "BK-VR-102C1U",
     checkInDate: "2026-08-01",
-    checkOutDate: "2027-07-31",
-    description: "Reserved for upcoming move-in."
-  },
-  {
-    id: "tamb-201-bed-a",
-    branchId: "tambaram",
-    branchName: "Tambaram",
-    roomId: "tamb-201",
-    roomNumber: "201",
-    sharingType: "4 Sharing",
-    bedName: "Bed A",
-    bedCode: "BED201A",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Reserved",
-    currentResident: "",
-    bookingId: "BK-TB-201A",
-    checkInDate: "2026-08-05",
-    checkOutDate: "2027-08-04",
-    description: "Reserved cot in a premium student room."
-  },
-  {
-    id: "tamb-201-bed-b",
-    branchId: "tambaram",
-    branchName: "Tambaram",
-    roomId: "tamb-201",
-    roomNumber: "201",
-    sharingType: "4 Sharing",
-    bedName: "Bed B",
-    bedCode: "BED201B",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Available",
-    currentResident: "",
-    bookingId: "",
-    checkInDate: "",
     checkOutDate: "",
-    description: "Available cot with allocated storage."
+    description: "Upper berth of double cot C1."
   },
   {
-    id: "tamb-201-bed-c",
-    branchId: "tambaram",
-    branchName: "Tambaram",
-    roomId: "tamb-201",
-    roomNumber: "201",
-    sharingType: "4 Sharing",
-    bedName: "Bed C",
-    bedCode: "BED201C",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Occupied",
-    currentResident: "Arjun Menon",
-    bookingId: "BK-TB-201C",
-    checkInDate: "2026-04-20",
-    checkOutDate: "2027-04-19",
-    description: "Occupied cot with desk access."
-  },
-  {
-    id: "tamb-201-bed-d",
-    branchId: "tambaram",
-    branchName: "Tambaram",
-    roomId: "tamb-201",
-    roomNumber: "201",
-    sharingType: "4 Sharing",
-    bedName: "Bed D",
-    bedCode: "BED201D",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Available",
-    currentResident: "",
-    bookingId: "",
-    checkInDate: "",
-    checkOutDate: "",
-    description: "Corner cot with good ventilation."
-  },
-  {
-    id: "vela-301-bed-c",
-    branchId: "velachery",
-    branchName: "Velachery",
-    roomId: "vela-301",
-    roomNumber: "301",
-    sharingType: "2 Sharing",
-    bedName: "Bed C",
-    bedCode: "BED301C",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Maintenance",
-    currentResident: "",
-    bookingId: "",
-    checkInDate: "",
-    checkOutDate: "",
-    description: "Temporarily blocked for bed frame maintenance."
-  },
-  {
-    id: "guindy-401-bed-a",
-    branchId: "guindy",
-    branchName: "Guindy",
-    roomId: "guindy-401",
-    roomNumber: "401",
-    sharingType: "1 Sharing",
-    bedName: "Bed A",
-    bedCode: "BED401A",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Available",
-    currentResident: "",
-    bookingId: "",
-    checkInDate: "",
-    checkOutDate: "",
-    description: "Single occupancy cot in a premium serviced room."
-  },
-  {
-    id: "porur-202-bed-a",
-    branchId: "porur",
-    branchName: "Porur",
-    roomId: "porur-202",
-    roomNumber: "202",
+    id: "viru-102-c1-lower",
+    branchId: "virugambakkam",
+    branchName: "Virugambakkam",
+    roomId: "viru-102",
+    roomNumber: "102",
     sharingType: "3 Sharing",
-    bedName: "Bed A",
-    bedCode: "BEDP202A",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Maintenance",
-    currentResident: "",
-    bookingId: "",
-    checkInDate: "",
-    checkOutDate: "",
-    description: "Room maintenance hold."
-  },
-  {
-    id: "tnagar-203-bed-a",
-    branchId: "t-nagar",
-    branchName: "T Nagar",
-    roomId: "tnagar-203",
-    roomNumber: "203",
-    sharingType: "2 Sharing",
-    bedName: "Bed A",
-    bedCode: "BEDT203A",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Occupied",
-    currentResident: "Karthik S",
-    bookingId: "BK-TN-203A",
-    checkInDate: "2026-03-15",
-    checkOutDate: "2027-03-14",
-    description: "Occupied cot in central city room."
-  },
-  {
-    id: "shol-501-bed-a",
-    branchId: "sholinganallur",
-    branchName: "Sholinganallur",
-    roomId: "shol-501",
-    roomNumber: "501",
-    sharingType: "2 Sharing",
-    bedName: "Bed A",
-    bedCode: "BEDS501A",
-    bedType: "Single Cot",
+    bedName: "Cot C1 · Lower",
+    bedCode: "BEDV102C1-L",
+    bedType: "Double Cot (Bunk)",
+    cotCode: "C1",
+    berthPosition: "LOWER",
     bedImage: luxuryBedImage,
     status: "Available",
     currentResident: "",
     bookingId: "",
     checkInDate: "",
     checkOutDate: "",
-    description: "OMR-facing cot with balcony access."
+    description: "Lower berth of double cot C1."
   },
-  {
-    id: "meda-103-bed-a",
-    branchId: "medavakkam",
-    branchName: "Medavakkam",
-    roomId: "meda-103",
-    roomNumber: "103",
-    sharingType: "4 Sharing",
-    bedName: "Bed A",
-    bedCode: "BEDM103A",
-    bedType: "Single Cot",
-    bedImage: luxuryBedImage,
-    status: "Available",
-    currentResident: "",
-    bookingId: "",
-    checkInDate: "",
-    checkOutDate: "",
-    description: "Available cot in a large sharing room."
-  }
-];
+].filter((bed) => isLaunchBranchId(bed.branchId));
+
+const sharingTypeByBerthCount = { 1: "1 Sharing", 2: "2 Sharing", 3: "3 Sharing", 4: "4 Sharing" };
+
+const syncBedSharingTypes = (beds) => {
+  const counts = {};
+  beds.forEach((bed) => {
+    counts[bed.roomId] = (counts[bed.roomId] || 0) + 1;
+  });
+  return beds.map((bed) => {
+    const sharingType = sharingTypeByBerthCount[counts[bed.roomId]];
+    return sharingType && sharingType !== bed.sharingType ? { ...bed, sharingType } : bed;
+  });
+};
+
+const staleBedIds = new Set(["anna-101-bed-a", "anna-101-bed-b", "anna-102-bed-b", "anna-102-bed-c", "viru-101-bed-a", "viru-101-bed-b"]);
 
 export const loadBeds = () => {
   const stored = localStorage.getItem(BED_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : defaultBeds;
+  const source = stored ? JSON.parse(stored) : defaultBeds;
+  const requiredDemoBeds = defaultBeds.filter((bed) => ["anna-101", "anna-102", "viru-101", "viru-102"].includes(bed.roomId));
+  const sourceWithDoubleCotBeds = [...source, ...requiredDemoBeds.filter((bed) => !source.some((item) => item.id === bed.id))];
+  const cleaned = sourceWithDoubleCotBeds.filter((bed) => !staleBedIds.has(bed.id));
+  const scoped = cleaned.filter((bed) => isLaunchBranchId(bed.branchId));
+  const synced = syncBedSharingTypes(scoped);
+  if (stored && JSON.stringify(synced) !== JSON.stringify(source)) localStorage.setItem(BED_STORAGE_KEY, JSON.stringify(synced));
+  return synced;
 };
 
 export const saveBeds = (beds) => {
-  localStorage.setItem(BED_STORAGE_KEY, JSON.stringify(beds));
-  window.dispatchEvent(new CustomEvent("pg:beds-updated", { detail: { beds } }));
+  registerLaunchBranchIds(beds.map((bed) => bed && bed.branchId));
+  const scopedBeds = beds.filter((bed) => isLaunchBranchId(bed.branchId));
+  localStorage.setItem(BED_STORAGE_KEY, JSON.stringify(scopedBeds));
+  window.dispatchEvent(new CustomEvent("pg:beds-updated", { detail: { beds: scopedBeds } }));
 };

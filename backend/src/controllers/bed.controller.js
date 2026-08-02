@@ -3,6 +3,7 @@ const createCrudController = require("./crudFactory");
 const ApiError = require("../utils/apiError");
 const catchAsync = require("../utils/catchAsync");
 const { emitBedAvailability } = require("../services/socket.service");
+const { releaseExpiredHolds } = require("../services/bookingHold.service");
 
 const allowedStatuses = ["AVAILABLE", "OCCUPIED", "RESERVED", "MAINTENANCE"];
 const statusAliases = {
@@ -19,6 +20,16 @@ const normalizeStatus = (status) => statusAliases[status] || String(status || ""
 const crud = createCrudController(Bed, {
   populate: "branch room currentResident",
   filterFields: ["branch", "room", "status"]
+});
+
+const list = catchAsync(async (req, res) => {
+  await releaseExpiredHolds();
+  const filter = {};
+  ["branch", "room", "status", "bedType", "cotCode", "berthPosition"].forEach((field) => {
+    if (req.query[field] !== undefined) filter[field] = req.query[field];
+  });
+  const data = await Bed.find(filter).populate("branch room currentResident").sort({ cotCode: 1, berthPosition: 1, label: 1 });
+  res.json({ success: true, data });
 });
 
 const create = catchAsync(async (req, res) => {
@@ -65,4 +76,4 @@ const update = catchAsync(async (req, res) => {
   res.json({ success: true, data: bed });
 });
 
-module.exports = { ...crud, create, update };
+module.exports = { ...crud, list, create, update };

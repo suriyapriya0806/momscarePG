@@ -23,6 +23,8 @@ const emptyBed = {
   bedName: "",
   bedCode: "",
   bedType: "Single Cot",
+  cotCode: "",
+  berthPosition: "SINGLE",
   bedImage: luxuryBedImage,
   status: "Available",
   currentResident: "",
@@ -75,6 +77,7 @@ const validateBed = (bed, beds, editingId) => {
   if (!bed.roomId) errors.roomId = "Room is required";
   if (!bed.bedName.trim()) errors.bedName = "Bed name is required";
   if (!bed.bedCode.trim()) errors.bedCode = "Bed code is required";
+  if (bed.bedType === "Double Cot (Bunk)" && !bed.cotCode.trim()) errors.cotCode = "Cot code is required";
   if (bed.bedCode && beds.some((item) => item.bedCode.trim().toLowerCase() === bed.bedCode.trim().toLowerCase() && item.id !== editingId)) {
     errors.bedCode = "Duplicate bed code is not allowed";
   }
@@ -136,6 +139,10 @@ const BedDrawer = ({ bed, beds, rooms, branches, onClose, onSave }) => {
         next.roomNumber = room?.roomNumber || "";
         next.sharingType = room?.sharingType || "";
       }
+      if (field === "bedType") {
+        next.berthPosition = value === "Double Cot (Bunk)" ? "UPPER" : "SINGLE";
+        if (value === "Single Cot") next.cotCode = "";
+      }
       return next;
     });
   };
@@ -151,11 +158,26 @@ const BedDrawer = ({ bed, beds, rooms, branches, onClose, onSave }) => {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length || imageError) return;
 
-    onSave({
+    const savedBed = {
       ...normalized,
       id: editingId || createId(normalized),
       bedImage: normalized.bedImage || luxuryBedImage
-    });
+    };
+    if (!editingId && normalized.bedType === "Double Cot (Bunk)") {
+      const opposite = normalized.berthPosition === "UPPER" ? "LOWER" : "UPPER";
+      onSave([
+        savedBed,
+        {
+          ...savedBed,
+          id: createId({ ...normalized, bedName: `${normalized.cotCode} ${opposite}` }),
+          bedName: `${normalized.cotCode} ${opposite[0]}${opposite.slice(1).toLowerCase()}`,
+          bedCode: `${normalized.bedCode}-${opposite[0]}`,
+          berthPosition: opposite
+        }
+      ]);
+      return;
+    }
+    onSave(savedBed);
   };
 
   return (
@@ -195,6 +217,17 @@ const BedDrawer = ({ bed, beds, rooms, branches, onClose, onSave }) => {
               {BED_TYPES.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
           </Field>
+          {form.bedType === "Double Cot (Bunk)" && <>
+            <Field label="Cot / Bunk Code" required error={errors.cotCode}>
+              <input className={fieldClass} placeholder="C1" value={form.cotCode} onChange={(event) => update("cotCode", event.target.value.toUpperCase())} />
+            </Field>
+            <Field label="Bookable Berth">
+              <select className={fieldClass} value={form.berthPosition} onChange={(event) => update("berthPosition", event.target.value)}>
+                <option value="UPPER">Upper berth</option>
+                <option value="LOWER">Lower berth</option>
+              </select>
+            </Field>
+          </>}
           <Field label="Status">
             <select className={fieldClass} value={form.status} onChange={(event) => update("status", event.target.value)}>
               {BED_STATUSES.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -335,10 +368,13 @@ const BedsPage = () => {
     setPage(1);
   };
 
-  const saveBed = (bed) => {
-    const nextBeds = beds.some((item) => item.id === bed.id)
-      ? beds.map((item) => (item.id === bed.id ? bed : item))
-      : [bed, ...beds];
+  const saveBed = (bedOrBeds) => {
+    const records = Array.isArray(bedOrBeds) ? bedOrBeds : [bedOrBeds];
+    const nextBeds = records.reduce((next, bed) => (
+      next.some((item) => item.id === bed.id)
+        ? next.map((item) => (item.id === bed.id ? bed : item))
+        : [bed, ...next]
+    ), beds);
     persistBeds(nextBeds);
     setShowDrawer(false);
   };
@@ -396,7 +432,7 @@ const BedsPage = () => {
         <table className="w-full min-w-[1120px] text-left text-sm">
           <thead className="border-b border-line bg-slate-50 text-slate-500">
             <tr>
-              {["Bed Image", "Bed Name", "Bed Code", "Branch", "Room Number", "Sharing Type", "Current Resident", "Status", "Actions"].map((heading) => (
+              {["Bed Image", "Bed Name", "Bed Code", "Type / Berth", "Branch", "Room Number", "Sharing Type", "Current Resident", "Status", "Actions"].map((heading) => (
                 <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>
               ))}
             </tr>
@@ -409,6 +445,10 @@ const BedsPage = () => {
                 </td>
                 <td className="px-4 py-3 font-bold text-ink">{bed.bedName}</td>
                 <td className="px-4 py-3 font-semibold text-slate-600">{bed.bedCode}</td>
+                <td className="px-4 py-3 text-slate-600">
+                  <p>{bed.bedType || "Single Cot"}</p>
+                  {bed.berthPosition && bed.berthPosition !== "SINGLE" && <p className="text-xs font-bold uppercase tracking-widest text-brand">{bed.cotCode || "Cot"} · {bed.berthPosition}</p>}
+                </td>
                 <td className="px-4 py-3 text-slate-600">{bed.branchName}</td>
                 <td className="px-4 py-3 text-slate-600">Room {bed.roomNumber}</td>
                 <td className="px-4 py-3 text-slate-600">{bed.sharingType}</td>
@@ -430,7 +470,7 @@ const BedsPage = () => {
               </tr>
             ))}
             {!visibleBeds.length && (
-              <tr><td colSpan="9" className="px-4 py-8 text-center text-slate-500">No beds match the selected filters.</td></tr>
+              <tr><td colSpan="10" className="px-4 py-8 text-center text-slate-500">No beds match the selected filters.</td></tr>
             )}
           </tbody>
         </table>

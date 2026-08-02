@@ -73,9 +73,9 @@ const BookingStatus = () => {
                   <Home className="h-4 w-4" /> Home
                 </Button>
               </Link>
-              <Link to="/featured-branches">
+              <Link to="/branches">
                 <Button className="w-full sm:w-auto">
-                  <ReceiptText className="h-4 w-4" /> View Featured Branches
+                  <ReceiptText className="h-4 w-4" /> View Branches
                 </Button>
               </Link>
             </div>

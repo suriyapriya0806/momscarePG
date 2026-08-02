@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const Bed = require("../models/Bed");
 const Booking = require("../models/Booking");
 const Payment = require("../models/Payment");
@@ -8,8 +7,39 @@ const User = require("../models/User");
 const ApiError = require("../utils/apiError");
 const catchAsync = require("../utils/catchAsync");
 const { emitBedAvailability, emitBookingBlocked, emitPaymentUpdate } = require("../services/socket.service");
+const { releaseExpiredHolds } = require("../services/bookingHold.service");
+const { notifyBookingBlocked } = require("../services/notification.service");
+
+const HOLD_DURATION_MS = 24 * 60 * 60 * 1000;
+
+// This is deliberately a compare-and-set update, rather than a read followed by
+// a save. MongoDB evaluates the status predicate when it writes the document,
+// so two requests can never both change the same AVAILABLE berth to RESERVED.
+const claimAvailableBed = (bed, room, branch, holdExpiresAt) => {
+  const update = holdExpiresAt
+    ? { $set: { status: "RESERVED", holdExpiresAt } }
+    : { $set: { status: "RESERVED" }, $unset: { holdExpiresAt: 1 } };
+
+  return Bed.findOneAndUpdate(
+    { _id: bed, room, branch, status: "AVAILABLE" },
+    update,
+    { new: true, runValidators: true }
+  );
+};
+
+const releaseClaimAfterFailedBooking = (bed) =>
+  Bed.findOneAndUpdate(
+    {
+      _id: bed._id,
+      status: "RESERVED",
+      holdExpiresAt: bed.holdExpiresAt
+    },
+    { $set: { status: "AVAILABLE" }, $unset: { holdExpiresAt: 1 } },
+    { new: true }
+  );
 
 const list = catchAsync(async (req, res) => {
+  await releaseExpiredHolds();
   const filter = {};
   if (req.user.role === "GUEST") filter.guest = req.user._id;
   if (req.user.role === "WARDEN" && req.user.branch) filter.branch = req.user.branch;
@@ -25,110 +55,80 @@ const list = catchAsync(async (req, res) => {
 
 const create = catchAsync(async (req, res) => {
   const { branch, room, bed, moveInDate, notes, guestName, guestPhone, mobileNumber } = req.body;
-  const session = await mongoose.startSession();
+  await releaseExpiredHolds();
+  const roomDoc = await Room.findById(room);
+  if (!roomDoc) throw new ApiError(404, "Room not found.");
+
+  const selectedBed = await claimAvailableBed(bed, room, branch, new Date(Date.now() + HOLD_DURATION_MS));
+  if (!selectedBed) throw new ApiError(409, "Selected bed is already reserved or no longer available.");
 
   let booking;
-  await session.withTransaction(async () => {
-    const selectedBed = await Bed.findOne({ _id: bed, room, branch }).session(session);
-    if (!selectedBed || selectedBed.status !== "AVAILABLE") {
-      throw new ApiError(409, "Selected bed is not available.");
-    }
+  try {
+    booking = await Booking.create({
+      guest: req.user._id,
+      branch,
+      room,
+      bed,
+      guestName: guestName || req.user.name,
+      guestPhone: guestPhone || mobileNumber || req.user.phone,
+      moveInDate,
+      notes,
+      tokenAmount: roomDoc.tokenAmount,
+      status: "BLOCKED",
+      holdExpiresAt: selectedBed.holdExpiresAt
+    });
+  } catch (error) {
+    await releaseClaimAfterFailedBooking(selectedBed);
+    throw error;
+  }
 
-    const roomDoc = await Room.findById(room).session(session);
-    if (!roomDoc) throw new ApiError(404, "Room not found.");
-
-    selectedBed.status = "RESERVED";
-    selectedBed.holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    await selectedBed.save({ session });
-
-    booking = await Booking.create(
-      [
-        {
-          guest: req.user._id,
-          branch,
-          room,
-          bed,
-          guestName: guestName || req.user.name,
-          guestPhone: guestPhone || mobileNumber || req.user.phone,
-          moveInDate,
-          notes,
-          tokenAmount: roomDoc.tokenAmount,
-          status: "BLOCKED"
-        }
-      ],
-      { session }
-    );
-
-    emitBedAvailability(selectedBed);
-    emitBookingBlocked(booking[0]);
-  });
-
-  session.endSession();
-  res.status(201).json({ success: true, data: booking[0] });
+  emitBedAvailability(selectedBed);
+  emitBookingBlocked(booking);
+  await notifyBookingBlocked(booking);
+  res.status(201).json({ success: true, data: booking });
 });
 
 const createDirect = catchAsync(async (req, res) => {
   const { branch, room, bed, moveInDate, notes, guestName, guestPhone, guestEmail, source = "WALK_IN" } = req.body;
   if (!guestName || !guestPhone) throw new ApiError(422, "Guest name and mobile number are required.");
 
-  const session = await mongoose.startSession();
+  await releaseExpiredHolds();
+  const roomDoc = await Room.findById(room);
+  if (!roomDoc) throw new ApiError(404, "Room not found.");
+
+  const selectedBed = await claimAvailableBed(bed, room, branch, undefined);
+  if (!selectedBed) throw new ApiError(409, "Selected bed is already reserved or no longer available.");
+
   let booking;
-
-  await session.withTransaction(async () => {
-    const selectedBed = await Bed.findOne({ _id: bed, room, branch }).session(session);
-    if (!selectedBed || selectedBed.status !== "AVAILABLE") {
-      throw new ApiError(409, "Selected bed is not available.");
-    }
-
-    const roomDoc = await Room.findById(room).session(session);
-    if (!roomDoc) throw new ApiError(404, "Room not found.");
-
+  try {
     const email = String(guestEmail || `walkin-${Date.now()}@pgstay.local`).toLowerCase();
-    let guest = await User.findOne({ email }).session(session);
+    let guest = await User.findOne({ email });
     if (!guest) {
-      guest = await User.create(
-        [
-          {
-            name: guestName,
-            email,
-            phone: guestPhone,
-            role: "GUEST",
-            provider: "local"
-          }
-        ],
-        { session }
-      ).then(([user]) => user);
+      guest = await User.create({ name: guestName, email, phone: guestPhone, role: "GUEST", provider: "local" });
     }
 
-    selectedBed.status = "RESERVED";
-    selectedBed.holdExpiresAt = undefined;
-    await selectedBed.save({ session });
+    booking = await Booking.create({
+      guest: guest._id,
+      branch,
+      room,
+      bed,
+      guestName,
+      guestPhone,
+      source: source === "PHONE" ? "PHONE" : "WALK_IN",
+      moveInDate,
+      notes,
+      tokenAmount: roomDoc.tokenAmount,
+      status: "BLOCKED"
+    });
+  } catch (error) {
+    await releaseClaimAfterFailedBooking(selectedBed);
+    throw error;
+  }
 
-    booking = await Booking.create(
-      [
-        {
-          guest: guest._id,
-          branch,
-          room,
-          bed,
-          guestName,
-          guestPhone,
-          source: source === "PHONE" ? "PHONE" : "WALK_IN",
-          moveInDate,
-          notes,
-          tokenAmount: roomDoc.tokenAmount,
-          status: "BLOCKED"
-        }
-      ],
-      { session }
-    );
-
-    emitBedAvailability(selectedBed);
-    emitBookingBlocked(booking[0]);
-  });
-
-  session.endSession();
-  res.status(201).json({ success: true, data: booking[0] });
+  emitBedAvailability(selectedBed);
+  emitBookingBlocked(booking);
+  await notifyBookingBlocked(booking);
+  res.status(201).json({ success: true, data: booking });
 });
 
 const approve = catchAsync(async (req, res) => {
@@ -145,7 +145,8 @@ const approve = catchAsync(async (req, res) => {
   booking.status = "APPROVED";
   booking.approvedBy = req.user._id;
   booking.approvedAt = new Date();
-  bed.status = "RESERVED";
+  booking.holdExpiresAt = undefined;
+  bed.status = "OCCUPIED";
   bed.holdExpiresAt = undefined;
 
   const resident = await Resident.create({
@@ -188,6 +189,7 @@ const reject = catchAsync(async (req, res) => {
   const bed = await Bed.findById(booking.bed);
   booking.status = "REJECTED";
   booking.rejectionReason = req.body.reason || "Rejected by Super Admin";
+  booking.holdExpiresAt = undefined;
   if (bed && bed.status !== "OCCUPIED") {
     bed.status = "AVAILABLE";
     bed.holdExpiresAt = undefined;

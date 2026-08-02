@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   CalendarDays,
@@ -33,7 +33,27 @@ const AmenityIcon = ({ index }) => {
 
 const Home = () => {
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
+  const [location, setLocation] = useState("");
+  const [moveIn, setMoveIn] = useState("");
+  const [preference, setPreference] = useState("");
+  const [searchError, setSearchError] = useState("");
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const branchNames = ["Anna Nagar", "Virugambakkam"];
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const matchedBranch = branchNames.find((branch) => branch.toLowerCase() === location.trim().toLowerCase());
+    if (!matchedBranch) {
+      setSearchError("Please choose Anna Nagar or Virugambakkam.");
+      return;
+    }
+
+    const params = new URLSearchParams({ location: matchedBranch });
+    if (moveIn) params.set("moveIn", moveIn);
+    if (preference) params.set("preference", preference);
+    navigate(`/branches?${params.toString()}`);
+  };
 
   return (
   <main className="overflow-hidden">
@@ -47,7 +67,7 @@ const Home = () => {
             </p>
           )}
           <h1 className="mt-5 text-4xl font-semibold leading-[1.06] text-ink sm:text-5xl lg:text-6xl">
-            Luxury PG stays curated for effortless city living.
+            Comfortable PG stays for effortless city living.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-secondary">
             Discover refined rooms, verified branches, hotel-inspired amenities, and a calm booking experience designed for students and professionals.
@@ -58,16 +78,15 @@ const Home = () => {
                 Explore Residences <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <a href="#featured">
+            <a href="#branches">
               <Button variant="secondary" className="w-full sm:w-auto">
-                View Featured PGs
+                View Our Branches
               </Button>
             </a>
           </div>
-          <div className="mt-10 grid max-w-xl grid-cols-3 divide-x divide-line rounded-[18px] border border-line bg-white shadow-soft">
+          <div className="mt-10 grid max-w-md grid-cols-2 divide-x divide-line rounded-[18px] border border-line bg-white shadow-soft">
             {[
-              ["48+", "Curated PGs"],
-              ["12", "Prime branches"],
+              ["2", "Prime Branches"],
               ["4.8", "Guest rating"]
             ].map(([value, label]) => (
               <div key={label} className="px-4 py-5 text-center">
@@ -87,8 +106,8 @@ const Home = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.24em] text-brand">Signature Branch</p>
-                <h2 className="mt-2 text-xl font-semibold text-ink">Aurelia Indiranagar</h2>
-                <p className="mt-1 text-sm text-secondary">Chef meals, ensuite rooms, resident lounge</p>
+                <h2 className="mt-2 text-xl font-semibold text-ink">Virugambakkam</h2>
+                <p className="mt-1 text-sm text-secondary">Comfortable rooms, secure stays, caring support</p>
               </div>
               <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-3 py-1 text-sm font-semibold text-brand">
                 <Star className="h-4 w-4 fill-brand" /> 4.9
@@ -100,25 +119,36 @@ const Home = () => {
     </section>
 
     <section className="relative z-10 mx-auto -mt-6 max-w-6xl px-4 sm:px-6 lg:px-8">
+      <form onSubmit={handleSearch} className="contents">
       <Card className="p-4 hover:translate-y-0 lg:p-6">
         <div className="grid gap-4 md:grid-cols-[1.2fr_1fr_1fr_auto] md:items-end">
-          <Input label="Location" placeholder="Search city or branch" />
-          <Input label="Move-in" type="text" placeholder="15 Jul 2026" />
+          <Input label="Location" placeholder="Choose a branch" list="mom-care-branches" value={location} onChange={(event) => { setLocation(event.target.value); setSearchError(""); }} />
+          <datalist id="mom-care-branches">{branchNames.map((branch) => <option key={branch} value={branch} />)}</datalist>
+          <Input label="Move-in" type="date" value={moveIn} onChange={(event) => setMoveIn(event.target.value)} />
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-ink">Preference</span>
-            <span className="flex min-h-12 items-center justify-between rounded-xl border border-line bg-white px-4 text-sm text-muted">
-              Single / Twin Sharing <ChevronDown className="h-4 w-4 text-brand" />
+            <span className="relative flex min-h-12 items-center rounded-xl border border-line bg-white px-4 text-sm text-muted">
+              <select value={preference} onChange={(event) => setPreference(event.target.value)} className="w-full appearance-none bg-transparent pr-6 outline-none">
+                <option value="">Any sharing type</option>
+                <option value="1 Sharing">Single sharing</option>
+                <option value="2 Sharing">Twin sharing</option>
+                <option value="3 Sharing">3 sharing</option>
+                <option value="4 Sharing">4 sharing</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-4 h-4 w-4 text-brand" />
             </span>
           </label>
-          <Button className="min-h-12">
+          <Button type="submit" className="min-h-12">
             <Search className="h-4 w-4" /> Search
           </Button>
         </div>
+        {searchError && <p className="mt-3 text-sm font-semibold text-danger" role="alert">{searchError}</p>}
       </Card>
+      </form>
     </section>
 
-    <section id="featured" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-      <SectionHeader eyebrow="Featured PG" title="Handpicked luxury residences" description="Premium spaces with elevated amenities, transparent pricing, and branch-level details ready for future booking flows." />
+    <section id="branches" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <SectionHeader eyebrow="Our Branches" title="Mom's Care PG Houses" description="Discover our two welcoming Chennai branches with transparent pricing and room-level booking details." />
       <div className="mt-12 grid gap-6 lg:grid-cols-3">
         {featuredPgs.map((pg) => (
           <Card key={pg.id} className="overflow-hidden p-0">
@@ -167,7 +197,7 @@ const Home = () => {
     </section>
 
     <section className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
-      <SectionHeader align="left" eyebrow="WHY CHOOSE PGSTAY" title="Why Thousands Choose PGStay" description="Find verified PG accommodations across Chennai with transparent pricing, real-time bed availability, online bed blocking, and premium amenities. Whether you're a student or a working professional, PGStay helps you discover the right place with confidence." />
+      <SectionHeader align="left" eyebrow="WHY MOM'S CARE" title="Why Guests Choose Mom's Care" description="Find verified PG accommodation with transparent pricing, real-time bed availability, online bed blocking, and caring amenities for students and working professionals." />
       <div className="grid gap-4 sm:grid-cols-2">
         {[
           ["Verified PG Branches", "Every PG is verified with complete property details, amenities, room information, and genuine photos before being listed."],
@@ -256,14 +286,14 @@ const Home = () => {
     <footer className="border-t border-[rgba(221,94,103,0.20)] bg-[#1F2937]">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr] lg:px-8">
         <div className="transition duration-300 ease-in-out hover:-translate-y-0.5">
-          <p className="text-2xl font-bold text-[#FFFFFF]">PGStay</p>
-          <p className="mt-3 max-w-md leading-7 text-[#B8BCC8]">PGStay is a smart PG Booking & Management Platform that helps students and working professionals find verified PG accommodations with real-time room availability, secure booking, and premium amenities across Chennai.</p>
+          <p className="text-2xl font-bold text-[#FFFFFF]">Mom's Care PG House</p>
+          <p className="mt-3 max-w-md leading-7 text-[#B8BCC8]">Mom's Care PG House helps students and working professionals find verified accommodation with real-time room availability, secure booking, and thoughtful amenities in Chennai.</p>
         </div>
         <div className="transition duration-300 ease-in-out hover:-translate-y-0.5">
           <p className="font-bold text-[#FFFFFF]">Quick Links</p>
           <div className="mt-4 grid gap-3 text-sm text-[#B8BCC8]">
             <Link to="/" className="text-[#DD5E67] transition duration-300 ease-in-out hover:text-[#D12233] hover:underline">Home</Link>
-            <Link to="/featured-branches" className="text-[#DD5E67] transition duration-300 ease-in-out hover:text-[#D12233] hover:underline">Featured PGs</Link>
+            <Link to="/branches" className="text-[#DD5E67] transition duration-300 ease-in-out hover:text-[#D12233] hover:underline">Branches</Link>
             <Link to="/#amenities" className="text-[#DD5E67] transition duration-300 ease-in-out hover:text-[#D12233] hover:underline">Amenities</Link>
             <Link to="/#faq" className="text-[#DD5E67] transition duration-300 ease-in-out hover:text-[#D12233] hover:underline">FAQ</Link>
             <Link to="/login" className="text-[#DD5E67] transition duration-300 ease-in-out hover:text-[#D12233] hover:underline">Login</Link>
@@ -272,9 +302,9 @@ const Home = () => {
         <div className="transition duration-300 ease-in-out hover:-translate-y-0.5">
           <p className="font-bold text-[#FFFFFF]">Contact Us</p>
           <div className="mt-4 grid gap-3 text-sm text-[#B8BCC8]">
-            <a href="mailto:support@pgstay.com" className="text-[#DD5E67] transition duration-300 ease-in-out hover:text-[#D12233] hover:underline">support@pgstay.com</a>
+            <a href="mailto:support@momscarepg.com" className="text-[#DD5E67] transition duration-300 ease-in-out hover:text-[#D12233] hover:underline">support@momscarepg.com</a>
             <a href="tel:+919876543210" className="text-[#DD5E67] transition duration-300 ease-in-out hover:text-[#D12233] hover:underline">+91 98765 43210</a>
-            <span>PGStay Head Office<br />Anna Nagar,<br />Chennai - 600040<br />Tamil Nadu, India</span>
+            <span>Mom's Care PG House<br />Anna Nagar,<br />Chennai - 600040<br />Tamil Nadu, India</span>
           </div>
         </div>
         <div className="transition duration-300 ease-in-out hover:-translate-y-0.5">
@@ -287,7 +317,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-      <div className="border-t border-[rgba(255,255,255,0.06)] bg-[#17171C] px-4 py-5 text-center text-sm text-[#AEB4C2]">© 2026 PGStay. All Rights Reserved.<br />Built for Smart PG Booking & Management.</div>
+      <div className="border-t border-[rgba(255,255,255,0.06)] bg-[#17171C] px-4 py-5 text-center text-sm text-[#AEB4C2]">© 2026 Mom's Care PG House. All Rights Reserved.<br />Built for comfortable PG living.</div>
     </footer>
   </main>
   );

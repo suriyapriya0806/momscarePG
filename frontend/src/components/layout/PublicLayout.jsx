@@ -16,7 +16,7 @@ const PublicLayout = () => {
   const profileMenuRef = useRef(null);
   const sectionLinks = [
     ["Home", "home"],
-    ["Featured", "featured"],
+    ["Branches", "branches"],
     ["Amenities", "amenities"],
     ["FAQ", "faq"]
   ];
@@ -52,16 +52,24 @@ const PublicLayout = () => {
   }, []);
 
   const scrollToSection = (id) => {
-    const scroll = () => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const headerOffset = 73;
+    const scroll = () => {
+      const element = document.getElementById(id);
+      if (!element) return;
+      const top = Math.max(element.getBoundingClientRect().top + window.scrollY - headerOffset, 0);
+      window.scrollTo({ top, behavior: "smooth" });
+    };
+    const scrollAfterClose = () => window.requestAnimationFrame(() => window.requestAnimationFrame(scroll));
 
     setOpen(false);
+    setProfileOpen(false);
     setActiveSection(id);
     if (location.pathname !== "/") {
       navigate("/");
-      window.setTimeout(scroll, 0);
+      window.setTimeout(scrollAfterClose, 80);
       return;
     }
-    scroll();
+    scrollAfterClose();
   };
 
   const handleLogout = () => {
@@ -79,11 +87,11 @@ const PublicLayout = () => {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-3 text-lg font-semibold text-ink" onClick={() => setOpen(false)}>
             <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl border border-brand/20 bg-white shadow-soft">
-              <img src="/logo.jpeg" alt="PG Stay logo" className="h-full w-full object-cover" />
+              <img src="/logo.jpeg" alt="Mom's Care PG House logo" className="h-full w-full object-cover" />
             </span>
             <span>
-              PGStay
-              <span className="block text-[10px] font-bold uppercase tracking-[0.28em] text-muted">Luxe Living</span>
+              Mom's Care
+              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted">PG House</span>
             </span>
           </Link>
           <button
@@ -93,7 +101,7 @@ const PublicLayout = () => {
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <nav className={`${open ? "block" : "hidden"} absolute left-0 top-[73px] w-full border-b border-line bg-white p-4 shadow-soft md:static md:block md:w-auto md:border-0 md:p-0 md:shadow-none`}>
+          <nav className={`${open ? "block" : "hidden"} absolute left-0 top-[73px] max-h-[calc(100dvh-73px)] w-full overflow-y-auto border-b border-line bg-white p-4 shadow-soft md:static md:block md:max-h-none md:w-auto md:overflow-visible md:border-0 md:p-0 md:shadow-none`}>
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-7">
               {sectionLinks.map(([label, id]) => (
                 <button

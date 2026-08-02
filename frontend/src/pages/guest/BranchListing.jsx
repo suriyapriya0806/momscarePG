@@ -1,26 +1,40 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, MapPin, Star } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { exploreBranches, formatCurrency } from "../../data/bookingFlow";
 
-const BranchListing = () => (
+const BranchListing = () => {
+  const [searchParams] = useSearchParams();
+  const location = searchParams.get("location")?.trim().toLowerCase() || "";
+  const moveIn = searchParams.get("moveIn");
+  const preference = searchParams.get("preference");
+  const visibleBranches = location
+    ? exploreBranches.filter((branch) => branch.name.toLowerCase().includes(location))
+    : exploreBranches;
+
+  return (
   <main className="bg-paper/70">
     <section className="border-b border-line bg-white">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.32em] text-brand">Explore Residences</p>
-          <h1 className="mt-5 text-4xl font-semibold leading-tight text-ink sm:text-5xl">Choose Your PG Branch</h1>
+          <p className="text-xs font-bold uppercase tracking-[0.32em] text-brand">Mom's Care Branches</p>
+          <h1 className="mt-5 text-4xl font-semibold leading-tight text-ink sm:text-5xl">Choose Your PG House</h1>
           <p className="mt-5 text-lg leading-8 text-secondary">
-            Select a premium Chennai residence to view availability, room types, and bed-level booking details.
+            Choose between our Anna Nagar and Virugambakkam branches to view rooms and live bed availability.
           </p>
+          {(moveIn || preference) && (
+            <p className="mt-4 text-sm font-semibold text-brand">
+              {moveIn && `Move-in: ${moveIn}`}{moveIn && preference && " · "}{preference && `Preference: ${preference}`}
+            </p>
+          )}
         </div>
       </div>
     </section>
 
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
       <div className="grid gap-6 md:grid-cols-2">
-        {exploreBranches.map((branch) => (
+        {visibleBranches.map((branch) => (
           <Link key={branch.id} to={`/branches/${branch.id}/rooms`} className="group block">
             <Card className="h-full overflow-hidden p-0">
               <div className="relative h-72 overflow-hidden">
@@ -64,8 +78,16 @@ const BranchListing = () => (
           </Link>
         ))}
       </div>
+      {!visibleBranches.length && (
+        <Card className="mx-auto mt-6 max-w-2xl text-center hover:translate-y-0">
+          <p className="text-xl font-semibold text-ink">No matching branch found</p>
+          <p className="mt-2 text-secondary">Please search for Anna Nagar or Virugambakkam.</p>
+          <Link to="/branches" className="mt-5 inline-block"><Button variant="secondary">View all branches</Button></Link>
+        </Card>
+      )}
     </section>
   </main>
-);
+  );
+};
 
 export default BranchListing;

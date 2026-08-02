@@ -4,7 +4,7 @@ import { FileText, ShieldCheck } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
-import { bookingBranches, bookingRooms, formatCurrency } from "../../data/bookingFlow";
+import { bookingBranches, bookingRooms, findRoomBed, formatCurrency } from "../../data/bookingFlow";
 import { loadBeds } from "../../data/adminBeds";
 import { loadBookings, saveBookings } from "../../data/adminBookings";
 import { loadRooms } from "../../data/adminRooms";
@@ -49,6 +49,11 @@ const numericFields = {
 };
 
 const todayValue = () => new Date().toISOString().slice(0, 10);
+const displayBedSelection = (room, bed) => {
+  if (!bed) return "No bed selected";
+  if (bed.cotCode && bed.berthPosition) return "Room " + room.number + " — Cot " + bed.cotCode + " — " + bed.berthPosition[0] + bed.berthPosition.slice(1).toLowerCase() + " berth";
+  return bed.label;
+};
 
 const createBookingId = (bookings) => {
   const maxId = bookings.reduce((value, booking) => Math.max(value, Number(String(booking.id).replace(/\D/g, "") || 0)), 0);
@@ -90,7 +95,7 @@ const BookingDetails = () => {
   const bedId = state?.bedId || searchParams.get("bedId");
   const room = bookingRooms.find((item) => item.id === roomId) || bookingRooms[0];
   const branch = bookingBranches.find((item) => item.id === room.branchId) || bookingBranches[0];
-  const selectedBed = room.bedList.find((bed) => bed.id === bedId) || state?.selectedBed || null;
+  const selectedBed = state?.selectedBed || findRoomBed(room.bedList, bedId) || null;
 
   const updateField = (field) => (event) => {
     const limit = numericFields[field];
@@ -207,6 +212,8 @@ const BookingDetails = () => {
       roomNumber: room.number,
       bedId: adminBed?.id || selectedBed.id,
       bedName: selectedBed.label,
+      cotCode: selectedBed.cotCode || "",
+      berthPosition: selectedBed.berthPosition || "",
       sharingType: room.sharingType,
       roomType: room.roomType,
       bookingDate: todayValue(),
@@ -233,7 +240,7 @@ const BookingDetails = () => {
           roomNumber: room.number,
           sharingType: room.sharingType,
           roomType: room.roomType,
-          selectedBed: selectedBed.label,
+          selectedBed: displayBedSelection(room, selectedBed),
           monthlyRent: room.monthlyRent,
           securityDeposit: room.securityDeposit,
           tokenAmount,
@@ -328,7 +335,7 @@ const BookingDetails = () => {
               ["Room Number", `Room ${room.number}`],
               ["Sharing Type", room.sharingType],
               ["AC / Non AC", room.roomType],
-              ["Selected Bed", selectedBed?.label || "No bed selected"],
+              ["Selected Bed", displayBedSelection(room, selectedBed)],
               ["Monthly Rent", formatCurrency(room.monthlyRent)],
               ["Security Deposit", formatCurrency(room.securityDeposit)],
               ["Manual Confirmation Amount", formatCurrency(tokenAmount)]

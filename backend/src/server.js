@@ -4,6 +4,7 @@ const app = require("./app");
 const connectDB = require("./config/db");
 const env = require("./config/env");
 const { attachSocket } = require("./services/socket.service");
+const { releaseExpiredHolds } = require("./services/bookingHold.service");
 
 const start = async () => {
   await connectDB();
@@ -20,7 +21,7 @@ const start = async () => {
     socket.on("room:leave", (roomId) => socket.leave(`room:${roomId}`));
   });
 
-  server.listen(env.port, () => {
+server.listen(env.port, () => {
     console.log(`[api] Server running on http://localhost:${env.port}`);
   });
 };
@@ -29,3 +30,8 @@ start().catch((error) => {
   console.error("[api] Failed to start server", error);
   process.exit(1);
 });
+
+// Recover holds even if no booking or bed endpoint is requested for a while.
+setInterval(() => {
+  releaseExpiredHolds().catch((error) => console.error("[holds] expiry job failed", error.message));
+}, 5 * 60 * 1000).unref();

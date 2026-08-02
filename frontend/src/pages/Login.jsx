@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { CheckCircle2, Facebook, Mail, XCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { CheckCircle2, Facebook, XCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
-import Input from "../components/ui/Input";
 import { useAuth } from "../context/AuthContext";
 import { getDashboardPathForRole } from "../routes/roleRoutes";
 
@@ -12,7 +11,6 @@ const Login = () => {
   const [error, setError] = useState("");
   const [popup, setPopup] = useState(null);
   const [redirectPath, setRedirectPath] = useState("");
-  const [showStaffLogin, setShowStaffLogin] = useState(false);
   const { login, socialLogin } = useAuth();
   const navigate = useNavigate();
 
@@ -78,10 +76,10 @@ const Login = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-ink/15" />
           <div className="relative flex h-full min-h-[560px] flex-col justify-end p-7 text-white sm:p-10">
             <div className="mb-6 flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] backdrop-blur">
-              <img src="/logo.jpeg" alt="PG Stay logo" className="h-6 w-6 rounded-full object-cover" />
-              Luxury PG Stay
+              <img src="/logo.jpeg" alt="Mom's Care PG House logo" className="h-6 w-6 rounded-full object-cover" />
+              Mom's Care PG House
             </div>
-            <h1 className="max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">Welcome to PG Stay</h1>
+            <h1 className="max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">Welcome to Mom's Care</h1>
             <p className="mt-4 max-w-lg text-base leading-7 text-white/80">Comfortable rooms, thoughtful amenities, and a seamless stay experience.</p>
           </div>
         </div>
@@ -89,8 +87,8 @@ const Login = () => {
         <Card className="hover:translate-y-0">
           <div>
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-brand">
-              <img src="/logo.jpeg" alt="PG Stay logo" className="h-7 w-7 rounded-full object-cover" />
-              PG Stay
+              <img src="/logo.jpeg" alt="Mom's Care PG House logo" className="h-7 w-7 rounded-full object-cover" />
+              Mom's Care
             </p>
             <h2 className="mt-3 text-3xl font-semibold text-ink">Sign in to continue</h2>
             <p className="mt-2 text-sm leading-6 text-secondary">Access your bookings and profile.</p>
@@ -107,39 +105,10 @@ const Login = () => {
             </Button>
           </div>
 
-          <button
-            type="button"
-            className="mt-7 w-full text-center text-sm font-bold text-brand transition hover:text-brandDark"
-            onClick={() => {
-              setError("");
-              setShowStaffLogin((value) => !value);
-            }}
-          >
-            Warden Login
-          </button>
-
-          {showStaffLogin && (
-            <form onSubmit={submit} className="mt-6 space-y-4 rounded-2xl border border-line bg-white p-5 shadow-soft">
-              <Input
-                label="Email"
-                type="email"
-                required
-                placeholder="name@pgstay.com"
-                value={form.loginId}
-                onChange={(e) => setForm({ ...form, loginId: e.target.value })}
-              />
-              <Input
-                label="Password"
-                type="password"
-                required
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
-              <Button className="w-full" type="submit">
-                <Mail className="h-4 w-4" /> Login
-              </Button>
-            </form>
-          )}
+          <div className="mt-7 grid gap-3 sm:grid-cols-2">
+            <Link to="/pgbooking/admin/login"><Button type="button" variant="secondary" className="w-full">Admin Login</Button></Link>
+            <Link to="/pgbooking/warden/login"><Button type="button" variant="secondary" className="w-full">Warden Login</Button></Link>
+          </div>
         </Card>
       </section>
     </main>

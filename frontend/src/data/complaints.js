@@ -1,3 +1,5 @@
+import { isLaunchBranchId, registerLaunchBranchIds } from "./launchScope";
+
 export const COMPLAINT_STORAGE_KEY = "pg_complaints";
 
 export const COMPLAINT_CATEGORIES = [
@@ -149,11 +151,15 @@ export const defaultComplaints = [
 
 export const loadComplaints = () => {
   const stored = localStorage.getItem(COMPLAINT_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : defaultComplaints;
+  const source = stored ? JSON.parse(stored) : defaultComplaints;
+  const scoped = source.filter((complaint) => isLaunchBranchId(complaint.branchId));
+  if (stored && scoped.length !== source.length) localStorage.setItem(COMPLAINT_STORAGE_KEY, JSON.stringify(scoped));
+  return scoped;
 };
 
 export const saveComplaints = (complaints) => {
-  localStorage.setItem(COMPLAINT_STORAGE_KEY, JSON.stringify(complaints));
+  registerLaunchBranchIds(complaints.map((complaint) => complaint && complaint.branchId));
+  localStorage.setItem(COMPLAINT_STORAGE_KEY, JSON.stringify(complaints.filter((complaint) => isLaunchBranchId(complaint.branchId))));
 };
 
 export const createComplaintId = (complaints) => {

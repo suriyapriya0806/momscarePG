@@ -16,5 +16,6 @@ router.use("/residents", require("./resident.routes"));
 router.use("/wardens", require("./warden.routes"));
 router.use("/dashboard", require("./dashboard.routes"));
 router.use("/reports", require("./report.routes"));
+router.use("/notifications", require("./notification.routes"));
 
 module.exports = router;

@@ -16,10 +16,6 @@ html.dark body {
   color: #f8f8f8;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 button {
   cursor: pointer;
   transition: transform 250ms ease, box-shadow 250ms ease, background-color 250ms ease, border-color 250ms ease, color 250ms ease;

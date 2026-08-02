@@ -73,6 +73,13 @@ const toGuestBed = (bed) =>
 
 const toGuestRoom = (adminRoom, adminBeds) => {
   const roomBeds = adminBeds.filter((bed) => bed.roomId === adminRoom.id);
+  // Rooms can be added before individual bed records are configured in the
+  // admin panel.  Keep those rooms bookable by displaying a temporary layout
+  // based on their configured capacity. BookingDetails turns the selected
+  // temporary bed into a persisted bed record when the booking is submitted.
+  const bedList = roomBeds.length
+    ? roomBeds.map(toGuestBed)
+    : buildDefaultRoomBeds(adminRoom.branchId, adminRoom.roomNumber, adminRoom.sharingType, Number(adminRoom.beds || 0));
   return {
     id: adminRoom.id,
     branchId: publicBranchIdFromAdminBranchId(adminRoom.branchId),
@@ -84,7 +91,7 @@ const toGuestRoom = (adminRoom, adminBeds) => {
     monthlyRent: Number(adminRoom.monthlyRent || 0),
     securityDeposit: Number(adminRoom.securityDeposit || 0),
     bookingAmount: bookingAmountBySharingType[adminRoom.sharingType] || 5000,
-    bedList: roomBeds.map(toGuestBed)
+    bedList
   };
 };
 

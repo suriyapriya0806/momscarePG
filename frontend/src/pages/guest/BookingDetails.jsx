@@ -4,11 +4,11 @@ import { FileText, ShieldCheck } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
-import { bookingBranches, bookingRooms, findRoomBed, formatCurrency } from "../../data/bookingFlow";
+import { usePublicBookingData, findRoomBed, formatCurrency } from "../../data/bookingFlow";
 import { loadBeds } from "../../data/adminBeds";
 import { loadBookings, saveBookings } from "../../data/adminBookings";
 import { loadRooms } from "../../data/adminRooms";
-import { publicBedIdFromAdminBed, saveAvailabilitySnapshot } from "../../lib/liveAvailability";
+import { adminBranchIdFromPublicBranchId, publicBedIdFromAdminBed, saveAvailabilitySnapshot } from "../../lib/liveAvailability";
 
 const initialForm = {
   fullName: "",
@@ -93,6 +93,7 @@ const BookingDetails = () => {
 
   const roomId = state?.roomId || searchParams.get("roomId");
   const bedId = state?.bedId || searchParams.get("bedId");
+  const { branches: bookingBranches, rooms: bookingRooms } = usePublicBookingData();
   const room = bookingRooms.find((item) => item.id === roomId) || bookingRooms[0];
   const branch = bookingBranches.find((item) => item.id === room.branchId) || bookingBranches[0];
   const selectedBed = state?.selectedBed || findRoomBed(room.bedList, bedId) || null;
@@ -191,6 +192,28 @@ const BookingDetails = () => {
           : bed
       ));
       saveAvailabilitySnapshot(nextBeds, loadRooms());
+    } else {
+      const templateAdminBed = {
+        id: selectedBed.id,
+        branchId: adminBranchIdFromPublicBranchId(branch.id),
+        branchName: branch.area || branch.name,
+        roomId: room.id,
+        roomNumber: room.number,
+        sharingType: room.sharingType,
+        bedName: selectedBed.label,
+        bedCode: `AUTO-${String(selectedBed.id).toUpperCase().replace(/[^A-Z0-9]+/g, "-")}`,
+        bedType: selectedBed.cotCode ? "Double Cot (Bunk)" : "Single Cot",
+        cotCode: selectedBed.cotCode || "",
+        berthPosition: selectedBed.berthPosition || "SINGLE",
+        bedImage: "",
+        status: "Reserved",
+        currentResident: "",
+        bookingId,
+        checkInDate: todayValue(),
+        checkOutDate: "",
+        description: "Auto-created from a guest template-bed booking."
+      };
+      saveAvailabilitySnapshot([...adminBeds, templateAdminBed], loadRooms());
     }
 
     const booking = {

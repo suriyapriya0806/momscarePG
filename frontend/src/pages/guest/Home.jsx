@@ -23,7 +23,8 @@ import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useAuth } from "../../context/AuthContext";
-import { amenities, faqs, featuredPgs, popularBranches, testimonials } from "../../data/landing";
+import { usePublicBookingData } from "../../data/bookingFlow";
+import { amenities, buildFeaturedPgs, faqs, popularBranches, testimonials } from "../../data/landing";
 
 const AmenityIcon = ({ index }) => {
   const icons = [Utensils, Wifi, Camera, LockKeyhole, WashingMachine, Sparkles, Zap, Droplets];
@@ -39,7 +40,9 @@ const Home = () => {
   const [searchError, setSearchError] = useState("");
   const { user } = useAuth();
   const navigate = useNavigate();
-  const branchNames = ["Anna Nagar", "Virugambakkam"];
+  const { branches } = usePublicBookingData();
+  const featuredPgs = buildFeaturedPgs(branches);
+  const branchNames = branches.map((branch) => branch.area || branch.name.replace(/^Mom's Care PG House\s*-?\s*/i, ""));
 
   const handleSearch = (event) => {
     event.preventDefault();

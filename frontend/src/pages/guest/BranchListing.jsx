@@ -2,13 +2,14 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, MapPin, Star } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { exploreBranches, formatCurrency } from "../../data/bookingFlow";
+import { usePublicBookingData, formatCurrency } from "../../data/bookingFlow";
 
 const BranchListing = () => {
   const [searchParams] = useSearchParams();
   const location = searchParams.get("location")?.trim().toLowerCase() || "";
   const moveIn = searchParams.get("moveIn");
   const preference = searchParams.get("preference");
+  const { branches: exploreBranches } = usePublicBookingData();
   const visibleBranches = location
     ? exploreBranches.filter((branch) => branch.name.toLowerCase().includes(location))
     : exploreBranches;

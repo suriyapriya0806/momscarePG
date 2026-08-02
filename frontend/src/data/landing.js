@@ -1,16 +1,17 @@
-import { featuredPgBranches, formatCurrency } from "./bookingFlow";
+import { formatCurrency } from "./bookingFlow";
 
-export const featuredPgs = featuredPgBranches.map((branch) => ({
-  id: branch.id,
-  name: branch.name,
-  location: branch.addressLines.join(" "),
-  rent: formatCurrency(branch.startingPrice),
-  rating: branch.rating,
-  tag: `${branch.occupancy.availableRooms} Available`,
-  image: branch.image,
-  amenities: branch.facilities,
-  branchId: branch.id
-}));
+export const buildFeaturedPgs = (branches) =>
+  branches.map((branch) => ({
+    id: branch.id,
+    name: branch.name,
+    location: branch.addressLines.join(" "),
+    rent: formatCurrency(branch.startingPrice),
+    rating: branch.rating,
+    tag: `${branch.occupancy.availableRooms} Available`,
+    image: branch.image,
+    amenities: branch.facilities,
+    branchId: branch.id
+  }));
 
 export const popularBranches = [
   { city: "Chennai", area: "Anna Nagar", properties: "1 Mom's Care PG House", occupancy: "80%" },

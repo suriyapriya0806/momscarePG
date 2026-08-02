@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import PublicLayout from "./components/layout/PublicLayout";
+import ScrollToHash from "./components/layout/ScrollToHash";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { getDashboardPathForRole, ROLES } from "./routes/roleRoutes";
 import ComplaintsPage from "./pages/complaints/ComplaintsPage";
@@ -19,12 +20,12 @@ import RoomsPage from "./pages/admin/RoomsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import WardensPage from "./pages/admin/WardensPage";
 import BedSelection from "./pages/guest/BedSelection";
-import Booking from "./pages/guest/Booking";
 import BookingDetails from "./pages/guest/BookingDetails";
 import BookingStatus from "./pages/guest/BookingStatus";
 import BranchListing from "./pages/guest/BranchListing";
 import FeaturedBranches from "./pages/guest/FeaturedBranches";
 import Home from "./pages/guest/Home";
+import PolicyPage from "./pages/guest/PolicyPage";
 import Profile from "./pages/guest/Profile";
 import RoomDetails from "./pages/guest/RoomDetails";
 import OccupancyPage from "./pages/warden/OccupancyPage";
@@ -33,7 +34,9 @@ import WardenPaymentsPage from "./pages/warden/WardenPaymentsPage";
 import WardenResidentsPage from "./pages/warden/WardenResidentsPage";
 
 const App = () => (
-  <Routes>
+  <>
+    <ScrollToHash />
+    <Routes>
     <Route element={<PublicLayout />}>
       <Route index element={<Home />} />
       <Route path="login" element={<Login />} />
@@ -45,8 +48,11 @@ const App = () => (
       <Route path="rooms/:roomId/beds" element={<BedSelection />} />
       <Route path="booking-details" element={<BookingDetails />} />
       <Route path="booking-status" element={<BookingStatus />} />
+      <Route path="privacy-policy" element={<PolicyPage slug="privacy" />} />
+      <Route path="terms-and-conditions" element={<PolicyPage slug="terms" />} />
+      <Route path="cancellation-refund-policy" element={<PolicyPage slug="cancellation" />} />
+      <Route path="contact-support" element={<PolicyPage slug="contact" />} />
       <Route element={<ProtectedRoute roles={[ROLES.USER]} />}>
-        <Route path="booking" element={<Booking />} />
         <Route path="my-bookings" element={<BookingStatus />} />
         <Route path="profile" element={<Profile />} />
       </Route>
@@ -81,6 +87,7 @@ const App = () => (
       </Route>
     </Route>
   </Routes>
+  </>
 );
 
 export default App;

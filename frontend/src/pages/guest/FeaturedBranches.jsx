@@ -2,13 +2,14 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, BedDouble, Check, MapPin, Star } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { featuredPgBranches, formatCurrency } from "../../data/bookingFlow";
+import { usePublicBookingData, formatCurrency } from "../../data/bookingFlow";
 
-const getBranchLocation = (branch) => `${branch.addressLines[1].replace(",", "")}, Chennai`;
+const getBranchLocation = (branch) => `${branch.addressLines[Math.max(0, branch.addressLines.length - 2)]}, Chennai`;
 
 const FeaturedBranches = () => {
   const [searchParams] = useSearchParams();
   const location = searchParams.get("location")?.toLowerCase() || "";
+  const { branches: featuredPgBranches } = usePublicBookingData();
   const visibleBranches = location
     ? featuredPgBranches.filter((branch) => branch.name.toLowerCase().includes(location))
     : featuredPgBranches;

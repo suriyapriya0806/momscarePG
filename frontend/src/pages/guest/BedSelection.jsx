@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import RoomLayout from "../../components/booking/RoomLayout";
-import { bookingBranches, bookingRooms, formatCurrency } from "../../data/bookingFlow";
+import { usePublicBookingData, formatCurrency } from "../../data/bookingFlow";
 import { useLiveAvailability } from "../../lib/liveAvailability";
 
 const selectedBedLabel = (room, bed) => {
@@ -24,6 +24,7 @@ const BedSelection = () => {
   const { roomId } = useParams();
   const [selectedBed, setSelectedBed] = useState(null);
   const { beds: liveBeds, rooms: liveRooms } = useLiveAvailability();
+  const { branches: bookingBranches, rooms: bookingRooms } = usePublicBookingData();
   const baseRoom = bookingRooms.find((item) => item.id === roomId);
   if (!baseRoom) return <Navigate to="/branches" replace />;
   const liveRoom = liveRooms.find((item) => item.id === baseRoom.id);

@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { bookingBranches, bookingRooms, formatCurrency } from "../../data/bookingFlow";
+import { usePublicBookingData, formatCurrency } from "../../data/bookingFlow";
 import { adminBranchIdFromPublicBranchId, useLiveAvailability } from "../../lib/liveAvailability";
 
 const sharingTypes = ["1 Sharing", "2 Sharing", "3 Sharing", "4 Sharing"];
@@ -64,22 +64,23 @@ const RoomDetails = () => {
   const [roomType, setRoomType] = useState("");
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(0);
   const { rooms: liveRooms } = useLiveAvailability();
+  const { branches: bookingBranches, rooms: bookingRooms } = usePublicBookingData();
   const selectedBranch = bookingBranches.find((item) => item.id === branchId);
   const branch = selectedBranch || bookingBranches[0];
   const liveBranchRooms = liveRooms.filter((room) => room.branchId === adminBranchIdFromPublicBranchId(branch.id));
-  const branchOccupancy = liveBranchRooms.length
-    ? {
-        totalRooms: liveBranchRooms.length,
-        bookedRooms: liveBranchRooms.filter((room) => room.overallAvailability !== "Available").length,
-        availableRooms: liveBranchRooms.filter((room) => room.overallAvailability === "Available").length
-      }
-    : branch.occupancy;
+  const guestBranchRooms = bookingRooms.filter((room) => room.branchId === branch.id);
+  const branchOccupancySource = liveBranchRooms.length ? liveBranchRooms : guestBranchRooms;
+  const branchOccupancy = {
+    totalRooms: branchOccupancySource.length,
+    bookedRooms: branchOccupancySource.filter((room) => room.status !== "Available").length,
+    availableRooms: branchOccupancySource.filter((room) => room.status === "Available").length
+  };
   const galleryImages = galleryLabels.map((label, index) => ({
     label,
     image: branch.gallery[index] || galleryFallbacks[index]
   }));
   const selectedGallery = galleryImages[selectedGalleryIndex] || galleryImages[0];
-  const occupancyRate = Math.round((branchOccupancy.bookedRooms / branchOccupancy.totalRooms) * 100);
+  const occupancyRate = branchOccupancy.totalRooms ? Math.round((branchOccupancy.bookedRooms / branchOccupancy.totalRooms) * 100) : 0;
   const mapEmbedUrl = `https://www.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed`;
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${branch.latitude},${branch.longitude}`;
 

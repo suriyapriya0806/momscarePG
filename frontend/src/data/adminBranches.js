@@ -220,6 +220,7 @@ export const saveBranches = (branches) => {
   const scopedBranches = branches.filter((branch) => isLaunchBranchId(branch.id));
   localStorage.setItem(BRANCH_STORAGE_KEY, JSON.stringify(scopedBranches));
   refreshAreas(scopedBranches);
+  window.dispatchEvent(new CustomEvent("pg:branches-updated", { detail: { branches: scopedBranches } }));
 };
 
 export const loadAmenities = () => {

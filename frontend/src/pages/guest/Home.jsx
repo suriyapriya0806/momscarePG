@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -38,6 +38,7 @@ const Home = () => {
   const [moveIn, setMoveIn] = useState("");
   const [preference, setPreference] = useState("");
   const [searchError, setSearchError] = useState("");
+  const moveInInputRef = useRef(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { branches } = usePublicBookingData();
@@ -56,6 +57,21 @@ const Home = () => {
     if (moveIn) params.set("moveIn", moveIn);
     if (preference) params.set("preference", preference);
     navigate(`/branches?${params.toString()}`);
+  };
+
+  const openMoveInPicker = () => {
+    const input = moveInInputRef.current;
+    if (!input) return;
+    input.focus();
+    try {
+      if (typeof input.showPicker === "function") {
+        input.showPicker();
+        return;
+      }
+    } catch {
+      // Some mobile browsers expose showPicker but still require the click fallback.
+    }
+    input.click();
   };
 
   return (
@@ -127,7 +143,27 @@ const Home = () => {
         <div className="grid gap-4 md:grid-cols-[1.2fr_1fr_1fr_auto] md:items-end">
           <Input label="Location" placeholder="Choose a branch" list="mom-care-branches" value={location} onChange={(event) => { setLocation(event.target.value); setSearchError(""); }} />
           <datalist id="mom-care-branches">{branchNames.map((branch) => <option key={branch} value={branch} />)}</datalist>
-          <Input label="Move-in" type="date" value={moveIn} onChange={(event) => setMoveIn(event.target.value)} />
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-ink">Move-in</span>
+            <span className="relative block">
+              <input
+                ref={moveInInputRef}
+                type="date"
+                value={moveIn}
+                onChange={(event) => setMoveIn(event.target.value)}
+                className="min-h-12 w-full rounded-xl border border-line bg-white px-4 pr-12 text-sm text-ink outline-none transition placeholder:text-muted focus:border-brand focus:ring-4 focus:ring-brand/25"
+                aria-label="Move-in date"
+              />
+              <button
+                type="button"
+                aria-label="Open move-in calendar"
+                onClick={openMoveInPicker}
+                className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-brand hover:bg-brand/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25"
+              >
+                <CalendarDays className="h-4 w-4" />
+              </button>
+            </span>
+          </label>
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-ink">Preference</span>
             <span className="relative flex min-h-12 items-center rounded-xl border border-line bg-white px-4 text-sm text-muted">
@@ -152,25 +188,29 @@ const Home = () => {
 
     <section id="branches" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
       <SectionHeader eyebrow="Our Branches" title="Mom's Care PG Houses" description="Discover our two welcoming Chennai branches with transparent pricing and room-level booking details." />
-      <div className="mt-12 grid gap-6 lg:grid-cols-3">
+      <div className="mt-12 grid items-stretch gap-6 md:grid-cols-2">
         {featuredPgs.map((pg) => (
-          <Card key={pg.id} className="overflow-hidden p-0">
-            <img src={pg.image} alt={pg.name} className="h-64 w-full object-cover" />
-            <div className="p-5">
-              <div className="flex items-center justify-between gap-3">
-                <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand">{pg.tag}</span>
-                <span className="inline-flex items-center gap-1 text-sm font-semibold text-ink"><Star className="h-4 w-4 fill-brand text-brand" /> {pg.rating}</span>
-              </div>
-              <h3 className="mt-4 text-xl font-semibold text-ink">{pg.name}</h3>
-              <p className="mt-2 flex items-center gap-2 text-sm text-secondary"><MapPin className="h-4 w-4 text-brand" /> {pg.location}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {pg.amenities.map((item) => (
-                  <span key={item} className="rounded-full border border-line px-3 py-1 text-xs font-semibold text-secondary">{item}</span>
-                ))}
-              </div>
-              <div className="mt-5 flex items-center justify-between border-t border-line pt-5">
-                <p><span className="text-2xl font-semibold text-ink">{pg.rent}</span><span className="text-sm text-muted"> / month</span></p>
-                <Link to={`/branches/${pg.branchId}/rooms`}><Button variant="secondary">Details</Button></Link>
+          <Card key={pg.id} className="flex h-full overflow-hidden p-0">
+            <div className="flex min-h-full w-full flex-col">
+              <img src={pg.image} alt={pg.name} className="h-64 w-full shrink-0 object-cover" />
+              <div className="flex flex-1 flex-col p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand">{pg.tag}</span>
+                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-ink"><Star className="h-4 w-4 fill-brand text-brand" /> {pg.rating}</span>
+                </div>
+                <h3 className="mt-4 text-xl font-semibold text-ink">{pg.name}</h3>
+                <p className="mt-2 flex items-center gap-2 text-sm text-secondary"><MapPin className="h-4 w-4 text-brand" /> {pg.location}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {pg.amenities.map((item) => (
+                    <span key={item} className="rounded-full border border-line px-3 py-1 text-xs font-semibold text-secondary">{item}</span>
+                  ))}
+                </div>
+                <div className="mt-auto pt-5">
+                  <div className="flex items-center justify-between border-t border-line pt-5">
+                    <p><span className="text-2xl font-semibold text-ink">{pg.rent}</span><span className="text-sm text-muted"> / month</span></p>
+                    <Link to={`/branches/${pg.branchId}/rooms`}><Button variant="secondary">Details</Button></Link>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>

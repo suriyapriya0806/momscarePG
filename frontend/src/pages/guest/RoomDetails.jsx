@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import {
   BedDouble,
   Building2,
@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { usePublicBookingData, formatCurrency } from "../../data/bookingFlow";
+import { usePublicBookingData, formatCurrency, isValidMoveInDate, roomAvailabilityForDate, withMoveInParam } from "../../data/bookingFlow";
 import { adminBranchIdFromPublicBranchId, useLiveAvailability } from "../../lib/liveAvailability";
 
 const sharingTypes = ["1 Sharing", "2 Sharing", "3 Sharing", "4 Sharing"];
@@ -63,7 +63,10 @@ const RoomDetails = () => {
   const [sharingType, setSharingType] = useState("");
   const [roomType, setRoomType] = useState("");
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(0);
-  const { rooms: liveRooms } = useLiveAvailability();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const moveIn = searchParams.get("moveIn") || "";
+  const hasMoveIn = isValidMoveInDate(moveIn);
+  const { beds: liveBeds, rooms: liveRooms } = useLiveAvailability();
   const { branches: bookingBranches, rooms: bookingRooms } = usePublicBookingData();
   const selectedBranch = bookingBranches.find((item) => item.id === branchId);
   const branch = selectedBranch || bookingBranches[0];
@@ -83,26 +86,38 @@ const RoomDetails = () => {
   const occupancyRate = branchOccupancy.totalRooms ? Math.round((branchOccupancy.bookedRooms / branchOccupancy.totalRooms) * 100) : 0;
   const mapEmbedUrl = `https://www.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed`;
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${branch.latitude},${branch.longitude}`;
+  const updateMoveIn = (value) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (value) nextParams.set("moveIn", value);
+    else nextParams.delete("moveIn");
+    setSearchParams(nextParams, { replace: true });
+    setSharingType("");
+    setRoomType("");
+  };
 
   const rooms = useMemo(
     () =>
       bookingRooms.map((room) => {
         const liveRoom = liveRooms.find((item) => item.id === room.id);
-        if (!liveRoom) return room;
+        const roomBeds = liveBeds.filter((bed) => bed.roomId === room.id);
+        const baseRoom = liveRoom
+          ? {
+              ...room,
+              beds: liveRoom.totalBeds,
+              status: liveRoom.overallAvailability,
+              monthlyRent: liveRoom.monthlyRent || room.monthlyRent,
+              bedList: roomBeds.length ? roomBeds.map((bed) => ({ ...bed, id: bed.id, label: bed.bedName, status: bed.status, checkInDate: bed.checkInDate || "", checkOutDate: bed.checkOutDate || "" })) : room.bedList
+            }
+          : room;
 
-        return {
-          ...room,
-          beds: liveRoom.totalBeds,
-          status: liveRoom.overallAvailability,
-          monthlyRent: liveRoom.monthlyRent || room.monthlyRent
-        };
+        return hasMoveIn ? roomAvailabilityForDate(baseRoom, moveIn) : baseRoom;
       }).filter((room) => {
         const branchMatch = room.branchId === branch.id;
         const sharingMatch = !sharingType || room.sharingType === sharingType;
         const roomMatch = !roomType || room.roomType === roomType;
         return branchMatch && sharingMatch && roomMatch;
       }),
-    [branch.id, liveRooms, roomType, sharingType]
+    [bookingRooms, branch.id, hasMoveIn, liveBeds, liveRooms, moveIn, roomType, sharingType]
   );
 
   if (!selectedBranch) return <Navigate to="/branches" replace />;
@@ -258,6 +273,34 @@ const RoomDetails = () => {
         <Card className="mt-8 hover:translate-y-0">
           <div className="flex flex-wrap items-end justify-between gap-5">
             <div>
+              <p className="text-xs font-bold uppercase tracking-[0.32em] text-brand">Start Stay Date</p>
+              <h2 className="mt-2 text-2xl font-semibold text-ink">Select Date To View Available Rooms</h2>
+              <p className="mt-2 text-sm text-secondary">Rooms and beds are shown based on this selected start stay date.</p>
+            </div>
+            <label className="block w-full sm:w-64">
+              <span className="mb-2 block text-sm font-semibold text-ink">Start Stay *</span>
+              <input
+                type="date"
+                value={moveIn}
+                onChange={(event) => updateMoveIn(event.target.value)}
+                className="min-h-12 w-full rounded-xl border border-line bg-white px-4 text-sm text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/25"
+                aria-label="Start stay date"
+              />
+            </label>
+          </div>
+        </Card>
+
+        {!hasMoveIn ? (
+          <Card className="mt-8 text-center hover:translate-y-0">
+            <Building2 className="mx-auto h-8 w-8 text-brand" />
+            <p className="mt-4 font-semibold text-ink">Select a start stay date to continue.</p>
+            <p className="mt-2 text-sm text-secondary">Room and bed availability will appear after choosing the date.</p>
+          </Card>
+        ) : (
+          <>
+        <Card className="mt-8 hover:translate-y-0">
+          <div className="flex flex-wrap items-end justify-between gap-5">
+            <div>
               <p className="text-xs font-bold uppercase tracking-[0.32em] text-brand">Room Filters</p>
               <h2 className="mt-2 text-2xl font-semibold text-ink">Find Matching Rooms</h2>
             </div>
@@ -302,7 +345,7 @@ const RoomDetails = () => {
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-2xl font-semibold text-ink">Available Rooms</h2>
-              <p className="mt-1 text-sm text-secondary">{rooms.length} rooms match the selected filters.</p>
+              <p className="mt-1 text-sm text-secondary">{rooms.length} rooms match the selected filters for {moveIn}.</p>
             </div>
           </div>
 
@@ -319,14 +362,14 @@ const RoomDetails = () => {
                 <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
                   <p className="rounded-xl border border-line px-3 py-2 font-semibold text-secondary">{room.sharingType}</p>
                   <p className="rounded-xl border border-line px-3 py-2 font-semibold text-secondary">{room.roomType}</p>
-                  <p className="rounded-xl border border-line px-3 py-2 font-semibold text-secondary">{room.beds} Beds</p>
+                  <p className="rounded-xl border border-line px-3 py-2 font-semibold text-secondary">{room.availableBedsForMoveIn ?? 0} Available</p>
                   <p className="rounded-xl border border-line px-3 py-2 font-semibold text-secondary">{formatCurrency(room.monthlyRent)}</p>
                 </div>
-                <Link to={`/rooms/${room.id}/beds`} className="mt-5 block">
+                {room.availableBedsForMoveIn > 0 ? <Link to={withMoveInParam(`/rooms/${room.id}/beds`, moveIn)} className="mt-5 block">
                   <Button className="w-full">
                     <BedDouble className="h-4 w-4" /> View Beds
                   </Button>
-                </Link>
+                </Link> : <Button className="mt-5 w-full" disabled>No Beds For This Date</Button>}
               </Card>
             ))}
           </div>
@@ -339,6 +382,8 @@ const RoomDetails = () => {
             </Card>
           )}
         </div>
+          </>
+        )}
       </section>
     </main>
   );

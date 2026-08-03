@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import RoomLayout from "../../components/booking/RoomLayout";
-import { usePublicBookingData, formatCurrency } from "../../data/bookingFlow";
+import { usePublicBookingData, formatCurrency, isValidMoveInDate, roomAvailabilityForDate, withMoveInParam } from "../../data/bookingFlow";
 import { useLiveAvailability } from "../../lib/liveAvailability";
 
 const selectedBedLabel = (room, bed) => {
@@ -22,6 +22,9 @@ const Legend = () => (
 
 const BedSelection = () => {
   const { roomId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const moveIn = searchParams.get("moveIn") || "";
+  const hasMoveIn = isValidMoveInDate(moveIn);
   const [selectedBed, setSelectedBed] = useState(null);
   const { beds: liveBeds, rooms: liveRooms } = useLiveAvailability();
   const { branches: bookingBranches, rooms: bookingRooms } = usePublicBookingData();
@@ -29,21 +32,55 @@ const BedSelection = () => {
   if (!baseRoom) return <Navigate to="/branches" replace />;
   const liveRoom = liveRooms.find((item) => item.id === baseRoom.id);
   const roomBeds = liveBeds.filter((bed) => bed.roomId === baseRoom.id);
-  const room = liveRoom ? { ...baseRoom, beds: liveRoom.totalBeds, status: liveRoom.overallAvailability, monthlyRent: liveRoom.monthlyRent || baseRoom.monthlyRent, bedList: roomBeds.length ? roomBeds.map((bed) => ({ ...bed, id: bed.id, label: bed.bedName, status: bed.status })) : baseRoom.bedList } : baseRoom;
+  const baseRoomWithLiveData = liveRoom ? { ...baseRoom, beds: liveRoom.totalBeds, status: liveRoom.overallAvailability, monthlyRent: liveRoom.monthlyRent || baseRoom.monthlyRent, bedList: roomBeds.length ? roomBeds.map((bed) => ({ ...bed, id: bed.id, label: bed.bedName, status: bed.status, checkInDate: bed.checkInDate || "", checkOutDate: bed.checkOutDate || "" })) : baseRoom.bedList } : baseRoom;
+  const room = hasMoveIn ? roomAvailabilityForDate(baseRoomWithLiveData, moveIn) : baseRoomWithLiveData;
   const branch = bookingBranches.find((item) => item.id === room.branchId);
   if (!branch) return <Navigate to="/branches" replace />;
-  const summary = [["Branch", branch.name], ["Room Number", `Room ${room.number}`], ["Sharing Type", room.sharingType], ["AC / Non AC", room.roomType], ["Selected Bed", selectedBedLabel(room, selectedBed)], ["Monthly Rent", formatCurrency(room.monthlyRent)], ["Security Deposit", formatCurrency(room.securityDeposit)], ["Booking Amount", formatCurrency(room.bookingAmount)]];
+  const updateMoveIn = (value) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (value) nextParams.set("moveIn", value);
+    else nextParams.delete("moveIn");
+    setSearchParams(nextParams, { replace: true });
+    setSelectedBed(null);
+  };
+  const summary = [["Branch", branch.name], ["Room Number", `Room ${room.number}`], ["Start Stay", hasMoveIn ? moveIn : "Select a date"], ["Sharing Type", room.sharingType], ["AC / Non AC", room.roomType], ["Selected Bed", selectedBedLabel(room, selectedBed)], ["Monthly Rent", formatCurrency(room.monthlyRent)], ["Security Deposit", formatCurrency(room.securityDeposit)], ["Booking Amount", formatCurrency(room.bookingAmount)]];
 
   return <main className="min-h-[calc(100vh-73px)] bg-[#fff7f7] pb-8">
     <section className="border-b border-[#f0e2e2] bg-white"><div className="mx-auto max-w-7xl px-5 py-7 sm:px-6 sm:py-8 lg:px-8"><p className="text-xs font-bold uppercase tracking-[0.22em] text-[#a96d72]">Bed Selection</p><h1 className="mt-1 text-3xl font-semibold tracking-tight text-[#17212d] sm:text-4xl">Room {room.number}</h1><p className="mt-1 text-sm text-ink sm:text-base">{branch.name} · {room.sharingType} · {room.roomType}</p></div></section>
     <section className="mx-auto max-w-7xl space-y-5 px-5 py-7 sm:px-6 lg:px-8">
       <div className="rounded-2xl border border-[#ebdddd] bg-white p-4 shadow-[0_12px_30px_rgba(31,41,55,0.07)] sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#a96d72]">Start Stay Date</p>
+            <h2 className="mt-1 text-xl font-semibold text-[#17212d]">Select Date To View Available Beds</h2>
+            <p className="mt-0.5 text-sm text-secondary">Beds are available based on this selected start stay date.</p>
+          </div>
+          <label className="block w-full sm:w-64">
+            <span className="mb-2 block text-sm font-semibold text-ink">Start Stay *</span>
+            <input
+              type="date"
+              value={moveIn}
+              onChange={(event) => updateMoveIn(event.target.value)}
+              className="min-h-12 w-full rounded-xl border border-line bg-white px-4 text-sm text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/25"
+              aria-label="Start stay date"
+            />
+          </label>
+        </div>
+      </div>
+      {hasMoveIn ? (
+      <div className="rounded-2xl border border-[#ebdddd] bg-white p-4 shadow-[0_12px_30px_rgba(31,41,55,0.07)] sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-xl font-semibold text-[#17212d]">Select a Bed</h2><p className="mt-0.5 text-sm text-secondary">Only available beds can be selected.</p></div><Legend /></div>
         <RoomLayout beds={room.bedList} selectedBed={selectedBed} onSelect={setSelectedBed} />
       </div>
+      ) : (
+        <div className="rounded-2xl border border-[#ebdddd] bg-white p-4 text-center shadow-[0_12px_30px_rgba(31,41,55,0.07)] sm:p-5">
+          <p className="font-semibold text-[#17212d]">Select a start stay date to continue.</p>
+          <p className="mt-2 text-sm text-secondary">Available beds will appear after choosing the date.</p>
+        </div>
+      )}
       <div className="rounded-2xl border border-[#ebdddd] bg-white p-4 shadow-[0_12px_30px_rgba(31,41,55,0.07)] sm:p-5"><p className="text-xs font-bold uppercase tracking-[0.22em] text-[#a96d72]">Booking Summary</p><h2 className="mt-1 text-xl font-semibold text-[#17212d]">Your Selection</h2><dl className="mt-2 divide-y divide-[#eee5e5] text-sm">{summary.map(([label, value]) => <div key={label} className="flex items-start justify-between gap-5 py-1.5"><dt className="text-ink">{label}</dt><dd className={`text-right font-semibold text-[#17212d] ${label === "Selected Bed" && !selectedBed ? "font-medium text-secondary" : ""}`}>{value}</dd></div>)}</dl>
-        {selectedBed ? <Link to={`/booking-details?roomId=${room.id}&bedId=${selectedBed.id}`} state={{ roomId: room.id, bedId: selectedBed.id, berthPosition: selectedBed.berthPosition || "", cotCode: selectedBed.cotCode || "", selectedBed }} className="mt-4 block"><Button className="w-full">Continue Booking</Button></Link> : <Button className="mt-4 w-full" disabled>Continue Booking</Button>}
-        <Link to={`/branches/${branch.id}/rooms`} className="mt-2 block"><Button variant="secondary" className="w-full">Back to Rooms</Button></Link>
+        {selectedBed && hasMoveIn ? <Link to={withMoveInParam(`/booking-details?roomId=${room.id}&bedId=${selectedBed.id}`, moveIn)} state={{ roomId: room.id, bedId: selectedBed.id, moveIn, berthPosition: selectedBed.berthPosition || "", cotCode: selectedBed.cotCode || "", selectedBed }} className="mt-4 block"><Button className="w-full">Continue Booking</Button></Link> : <Button className="mt-4 w-full" disabled>Continue Booking</Button>}
+        <Link to={withMoveInParam(`/branches/${branch.id}/rooms`, moveIn)} className="mt-2 block"><Button variant="secondary" className="w-full">Back to Rooms</Button></Link>
       </div>
     </section>
   </main>;

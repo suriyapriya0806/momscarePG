@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { FileText, ShieldCheck } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
-import { usePublicBookingData, findRoomBed, formatCurrency } from "../../data/bookingFlow";
+import { usePublicBookingData, findRoomBed, formatCurrency, isBedAvailableOnDate, isValidMoveInDate, withMoveInParam } from "../../data/bookingFlow";
 import { loadBeds } from "../../data/adminBeds";
 import { loadBookings, saveBookings } from "../../data/adminBookings";
 import { loadRooms } from "../../data/adminRooms";
@@ -90,13 +90,17 @@ const BookingDetails = () => {
   const [searchParams] = useSearchParams();
   const [form, setForm] = useState(initialForm);
   const [fileError, setFileError] = useState("");
+  const [blockError, setBlockError] = useState("");
 
   const roomId = state?.roomId || searchParams.get("roomId");
   const bedId = state?.bedId || searchParams.get("bedId");
+  const moveIn = state?.moveIn || searchParams.get("moveIn") || "";
+  const hasMoveIn = isValidMoveInDate(moveIn);
   const { branches: bookingBranches, rooms: bookingRooms } = usePublicBookingData();
-  const room = bookingRooms.find((item) => item.id === roomId) || bookingRooms[0];
-  const branch = bookingBranches.find((item) => item.id === room.branchId) || bookingBranches[0];
-  const selectedBed = state?.selectedBed || findRoomBed(room.bedList, bedId) || null;
+  const matchedRoom = bookingRooms.find((item) => item.id === roomId);
+  const room = matchedRoom || bookingRooms[0];
+  const branch = room ? bookingBranches.find((item) => item.id === room.branchId) || bookingBranches[0] : bookingBranches[0];
+  const selectedBed = room ? state?.selectedBed || findRoomBed(room.bedList, bedId) || null : null;
 
   const updateField = (field) => (event) => {
     const limit = numericFields[field];
@@ -166,9 +170,12 @@ const BookingDetails = () => {
       alternateMobileValid,
       emergencyMobileValid,
       fileValid,
-      formValid: requiredComplete && aadhaarValid && mobileNumberValid && guardianMobileValid && alternateMobileValid && emergencyMobileValid && fileValid && Boolean(selectedBed)
+      formValid: requiredComplete && aadhaarValid && mobileNumberValid && guardianMobileValid && alternateMobileValid && emergencyMobileValid && fileValid && Boolean(selectedBed) && hasMoveIn
     };
-  }, [fileError, form, selectedBed]);
+  }, [fileError, form, hasMoveIn, selectedBed]);
+
+  if (!matchedRoom) return <Navigate to="/branches" replace />;
+  if (!hasMoveIn) return <Navigate to={`/rooms/${room.id}/beds`} replace />;
 
   const blockBed = () => {
     if (!validation.formValid) return;
@@ -177,6 +184,12 @@ const BookingDetails = () => {
     const bookingId = createBookingId(storedBookings);
     const adminBeds = loadBeds();
     const adminBed = adminBeds.find((bed) => bed.id === selectedBed.id || publicBedIdFromAdminBed(bed) === selectedBed.id);
+    const availabilitySource = adminBed || selectedBed;
+
+    if (!isBedAvailableOnDate(availabilitySource, moveIn)) {
+      setBlockError("This bed is no longer available for the selected start stay date. Please choose another bed.");
+      return;
+    }
 
     if (adminBed) {
       const nextBeds = adminBeds.map((bed) => (
@@ -186,7 +199,7 @@ const BookingDetails = () => {
               status: "Reserved",
               currentResident: "",
               bookingId,
-              checkInDate: todayValue(),
+              checkInDate: moveIn,
               checkOutDate: ""
             }
           : bed
@@ -209,7 +222,7 @@ const BookingDetails = () => {
         status: "Reserved",
         currentResident: "",
         bookingId,
-        checkInDate: todayValue(),
+        checkInDate: moveIn,
         checkOutDate: "",
         description: "Auto-created from a guest template-bed booking."
       };
@@ -240,7 +253,7 @@ const BookingDetails = () => {
       sharingType: room.sharingType,
       roomType: room.roomType,
       bookingDate: todayValue(),
-      moveInDate: todayValue(),
+      moveInDate: moveIn,
       expectedStay: "Pending discussion",
       tokenAmount,
       transactionId: "",
@@ -264,6 +277,7 @@ const BookingDetails = () => {
           sharingType: room.sharingType,
           roomType: room.roomType,
           selectedBed: displayBedSelection(room, selectedBed),
+          moveInDate: moveIn,
           monthlyRent: room.monthlyRent,
           securityDeposit: room.securityDeposit,
           tokenAmount,
@@ -359,6 +373,7 @@ const BookingDetails = () => {
               ["Sharing Type", room.sharingType],
               ["AC / Non AC", room.roomType],
               ["Selected Bed", displayBedSelection(room, selectedBed)],
+              ["Start Stay", moveIn],
               ["Monthly Rent", formatCurrency(room.monthlyRent)],
               ["Security Deposit", formatCurrency(room.securityDeposit)],
               ["Manual Confirmation Amount", formatCurrency(tokenAmount)]
@@ -371,7 +386,8 @@ const BookingDetails = () => {
           </div>
 
           <div className="mt-7 grid gap-3">
-            <Link to={`/rooms/${room.id}/beds`}>
+            {blockError && <p className="rounded-xl bg-paper p-3 text-sm font-semibold text-danger">{blockError}</p>}
+            <Link to={withMoveInParam(`/rooms/${room.id}/beds`, moveIn)}>
               <Button variant="secondary" className="w-full">Back</Button>
             </Link>
             <Button className="w-full" disabled={!validation.formValid} onClick={blockBed}>

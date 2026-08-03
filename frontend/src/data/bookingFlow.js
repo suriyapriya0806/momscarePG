@@ -19,6 +19,53 @@ const bookingAmountBySharingType = {
   "4 Sharing": 2000
 };
 
+export const isValidMoveInDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
+
+export const withMoveInParam = (path, moveIn) => {
+  if (!isValidMoveInDate(moveIn)) return path;
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}moveIn=${encodeURIComponent(moveIn)}`;
+};
+
+const isDateInRange = (date, start, end) => (
+  Boolean(start) && date >= start && (!end || date <= end)
+);
+
+export const isBedAvailableOnDate = (bed, moveIn) => {
+  if (!isValidMoveInDate(moveIn)) return false;
+  if (bed.status === "Maintenance") return false;
+
+  const checkInDate = bed.checkInDate || "";
+  const checkOutDate = bed.checkOutDate || "";
+  const conflictsWithDateRange = isDateInRange(moveIn, checkInDate, checkOutDate);
+
+  if (bed.status === "Available") return !conflictsWithDateRange;
+  if (["Reserved", "Occupied"].includes(bed.status)) {
+    if (!checkInDate) return false;
+    return !conflictsWithDateRange && moveIn < checkInDate;
+  }
+
+  return false;
+};
+
+export const availabilityStatusForDate = (bed, moveIn) => (
+  isBedAvailableOnDate(bed, moveIn) ? "Available" : bed.status === "Maintenance" ? "Maintenance" : "Reserved"
+);
+
+export const roomAvailabilityForDate = (room, moveIn) => {
+  const bedList = (room.bedList || []).map((bed) => ({
+    ...bed,
+    status: availabilityStatusForDate(bed, moveIn)
+  }));
+  const availableBeds = bedList.filter((bed) => bed.status === "Available").length;
+  return {
+    ...room,
+    bedList,
+    availableBedsForMoveIn: availableBeds,
+    status: availableBeds > 0 ? "Available" : "Not Available"
+  };
+};
+
 const toAddressLines = (address) =>
   String(address || "").split(",").map((line) => line.trim()).filter(Boolean);
 
@@ -67,9 +114,11 @@ const toGuestBed = (bed) =>
         label: bed.bedName || `Cot ${bed.cotCode} · ${bed.berthPosition === "UPPER" ? "Upper" : "Lower"}`,
         cotCode: bed.cotCode,
         berthPosition: bed.berthPosition || "LOWER",
-        status: bed.status
+        status: bed.status,
+        checkInDate: bed.checkInDate || "",
+        checkOutDate: bed.checkOutDate || ""
       }
-    : { id: bed.id, label: bed.bedName || "Bed", status: bed.status };
+    : { id: bed.id, label: bed.bedName || "Bed", status: bed.status, checkInDate: bed.checkInDate || "", checkOutDate: bed.checkOutDate || "" };
 
 const toGuestRoom = (adminRoom, adminBeds) => {
   const roomBeds = adminBeds.filter((bed) => bed.roomId === adminRoom.id);

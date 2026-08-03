@@ -32,6 +32,7 @@ const BookingStatus = () => {
       ["Sharing Type", confirmedBooking.sharingType],
       ["AC / Non AC", confirmedBooking.roomType],
       ["Selected Bed", confirmedBooking.selectedBed],
+      ["Start Stay", confirmedBooking.moveInDate],
       ["Monthly Rent", confirmedBooking.monthlyRent ? formatCurrency(confirmedBooking.monthlyRent) : ""],
       ["Amount To Confirm In Person", confirmedBooking.tokenAmount ? formatCurrency(confirmedBooking.tokenAmount) : ""],
       ["Guest", confirmedBooking.guestName],

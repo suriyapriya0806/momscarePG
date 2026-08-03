@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import Input from "../../components/ui/Input";
 import SectionHeader from "../../components/ui/SectionHeader";
 import { useAuth } from "../../context/AuthContext";
 import { usePublicBookingData } from "../../data/bookingFlow";
@@ -141,8 +140,21 @@ const Home = () => {
       <form onSubmit={handleSearch} className="contents">
       <Card className="p-4 hover:translate-y-0 lg:p-6">
         <div className="grid gap-4 md:grid-cols-[1.2fr_1fr_1fr_auto] md:items-end">
-          <Input label="Location" placeholder="Choose a branch" list="mom-care-branches" value={location} onChange={(event) => { setLocation(event.target.value); setSearchError(""); }} />
-          <datalist id="mom-care-branches">{branchNames.map((branch) => <option key={branch} value={branch} />)}</datalist>
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-ink">Location</span>
+            <span className="relative flex min-h-12 items-center rounded-xl border border-line bg-white px-4 text-sm text-muted focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/25">
+              <select
+                value={location}
+                onChange={(event) => { setLocation(event.target.value); setSearchError(""); }}
+                className="w-full appearance-none bg-transparent pr-6 outline-none"
+                aria-label="Location"
+              >
+                <option value="">Choose a branch</option>
+                {branchNames.map((branch) => <option key={branch} value={branch}>{branch}</option>)}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-4 h-4 w-4 text-brand" />
+            </span>
+          </label>
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-ink">Move-in</span>
             <span className="relative block">

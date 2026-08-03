@@ -2,7 +2,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, MapPin, Star } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { usePublicBookingData, formatCurrency } from "../../data/bookingFlow";
+import { usePublicBookingData, formatCurrency, withMoveInParam } from "../../data/bookingFlow";
 
 const BranchListing = () => {
   const [searchParams] = useSearchParams();
@@ -36,7 +36,7 @@ const BranchListing = () => {
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
       <div className="grid gap-6 md:grid-cols-2">
         {visibleBranches.map((branch) => (
-          <Link key={branch.id} to={`/branches/${branch.id}/rooms`} className="group block">
+          <Link key={branch.id} to={withMoveInParam(`/branches/${branch.id}/rooms`, moveIn)} className="group block">
             <Card className="h-full overflow-hidden p-0">
               <div className="relative h-72 overflow-hidden">
                 <img src={branch.image} alt={branch.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
